@@ -25,6 +25,11 @@ class MatakuliahResource extends Resource
     // tipe harus BackedEnum|string|null (Filament v4)
     protected static BackedEnum|string|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $navigationLabel  = 'Mata Kuliah'; // sidebar
+    protected static ?string $modelLabel       = 'Mata Kuliah'; // label tunggal
+    protected static ?string $pluralModelLabel = 'Mata Kuliah'; // judul list
+    protected static ?string $recordTitleAttribute = 'nama';    // judul tiap record (breadcrumb, dsb)
+
     public static function form(Schema $form): Schema
     {
         return $form->schema([
