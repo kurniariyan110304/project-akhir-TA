@@ -18,7 +18,8 @@ class DosenResource extends Resource
 {
     protected static ?string $model = Dosen::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user';
+    
 
     protected static ?string $navigationLabel   = 'Dosen';  // label di sidebar
     protected static ?string $modelLabel        = 'Dosen';  // label tunggal

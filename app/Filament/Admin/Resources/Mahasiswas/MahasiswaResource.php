@@ -18,7 +18,7 @@ class MahasiswaResource extends Resource
 {
     protected static ?string $model = Mahasiswa::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationLabel   = 'Mahasiswa';  // label di sidebar
     protected static ?string $modelLabel        = 'Mahasiswa';  // label tunggal

@@ -18,7 +18,7 @@ class TugasResource extends Resource
 {
     protected static ?string $model = Tugas::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-pencil-square';
 
     protected static ?string $recordTitleAttribute = 'deskripsi';
 

@@ -23,7 +23,7 @@ class MatakuliahResource extends Resource
     protected static ?string $model = Matakuliah::class;
 
     // tipe harus BackedEnum|string|null (Filament v4)
-    protected static BackedEnum|string|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?string $navigationLabel  = 'Mata Kuliah'; // sidebar
     protected static ?string $modelLabel       = 'Mata Kuliah'; // label tunggal

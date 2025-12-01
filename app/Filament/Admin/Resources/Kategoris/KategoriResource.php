@@ -22,7 +22,7 @@ class KategoriResource extends Resource
     protected static ?string $model = Kategori::class;
 
     // tipe HARUS BackedEnum|string|null (mengikuti parent Resource)
-    protected static BackedEnum|string|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-folder';
 
     protected static ?string $navigationLabel  = 'Kategori';
     protected static ?string $modelLabel       = 'Kategori';
