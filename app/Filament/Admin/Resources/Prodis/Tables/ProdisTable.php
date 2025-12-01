@@ -2,11 +2,14 @@
 
 namespace App\Filament\Admin\Resources\Prodis\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
+
+// Actions untuk Filament v4
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\BulkActionGroup;
 
 class ProdisTable
 {
@@ -15,29 +18,27 @@ class ProdisTable
         return $table
             ->columns([
                 TextColumn::make('kode')
-                    ->searchable(),
+                    ->label('Kode')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('nama')
-                    ->searchable(),
+                    ->label('Nama Prodi')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('kaprodi')
-                    ->searchable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
+                    ->label('Ka. Prodi')
+                    ->searchable()
+                    ->sortable(),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make(),   // ikon edit per baris
+                DeleteAction::make(), // ikon delete per baris
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make(), // hapus banyak sekaligus
                 ]),
             ]);
     }

@@ -14,4 +14,6 @@ class Prodi extends Model
         'nama',
         'kaprodi',
     ];
+
+    public $timestamps = false;
 }

@@ -20,10 +20,9 @@ class ProdiResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel   = 'Prodi';  // label di sidebar
-    protected static ?string $modelLabel        = 'Prodi';  // label tunggal
-    protected static ?string $pluralModelLabel  = 'Prodi';  // label jamak (judul "Prodi" di halaman list)
-
+    protected static ?string $navigationLabel   = 'Prodi';
+    protected static ?string $modelLabel        = 'Prodi';
+    protected static ?string $pluralModelLabel  = 'Prodi';
     protected static ?string $recordTitleAttribute = 'nama';
 
     public static function form(Schema $schema): Schema
@@ -46,9 +45,9 @@ class ProdiResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListProdis::route('/'),
+            'index'  => ListProdis::route('/'),
             'create' => CreateProdi::route('/create'),
-            'edit' => EditProdi::route('/{record}/edit'),
+            'edit'   => EditProdi::route('/{record}/edit'),
         ];
     }
 }

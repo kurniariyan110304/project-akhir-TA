@@ -9,13 +9,21 @@ class ProdiForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                TextInput::make('kode')
-                    ->required(),
-                TextInput::make('nama')
-                    ->required(),
-                TextInput::make('kaprodi'),
+        return $schema->schema([
+            TextInput::make('kode')
+                ->label('Kode Prodi')
+                ->required()
+                ->maxLength(50)
+                ->unique(ignoreRecord: true),
+
+            TextInput::make('nama')
+                ->label('Nama Prodi')
+                ->required()
+                ->maxLength(255),
+
+            TextInput::make('kaprodi')
+                ->label('Ka. Prodi')
+                ->maxLength(255),
             ]);
     }
 }

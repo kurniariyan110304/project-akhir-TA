@@ -11,20 +11,11 @@ class KategoriForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->schema([
-            TextInput::make('kode')
-                ->label('Kode')
-                ->required()
-                ->maxLength(50)
-                ->unique(ignoreRecord: true),
 
             TextInput::make('nama')
                 ->label('Nama')
                 ->required()
                 ->maxLength(255),
-
-            Textarea::make('deskripsi')
-                ->label('Deskripsi')
-                ->columnSpanFull(),
         ]);
     }
 }
