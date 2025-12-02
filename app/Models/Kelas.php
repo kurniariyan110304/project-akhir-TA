@@ -11,6 +11,9 @@ class Kelas extends Model
 
     protected $table = 'kelas';
 
+    public $timestamps = false;
+
+
     protected $fillable = [
         'semester',
         'kode',
