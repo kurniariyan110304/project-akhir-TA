@@ -14,22 +14,36 @@ class TugasTable
     {
         return $table
             ->columns([
-                TextColumn::make('kategori'),
+                TextColumn::make('kategori')
+                    ->label('Kategori')
+                    ->sortable()
+                    ->searchable(),
+
                 TextColumn::make('semester')
-                    ->numeric()
+                    ->label('Semester')
                     ->sortable(),
-                TextColumn::make('kelas_id')
-                    ->numeric()
-                    ->sortable(),
+
+                //ambil dari relasi `kelas` → kolom `kode` (atau ganti ke `nama` kalau ada)
+                TextColumn::make('kelas.kode')
+                    ->label('Kelas')
+                    ->sortable()
+                    ->searchable(),
+
                 TextColumn::make('mulai')
+                    ->label('Mulai')
                     ->date()
                     ->sortable(),
+
                 TextColumn::make('akhir')
+                    ->label('Akhir')
                     ->date()
                     ->sortable(),
-                TextColumn::make('kategori_project_id')
-                    ->numeric()
-                    ->sortable(),
+
+                //ambil dari relasi `kategoriProject` → kolom `nama`
+                TextColumn::make('kategoriProject.nama')
+                    ->label('Kategori Project')
+                    ->sortable()
+                    ->searchable(),
             ])
             ->filters([
                 //

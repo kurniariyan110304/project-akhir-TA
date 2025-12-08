@@ -64,7 +64,7 @@ class MatakuliahResource extends Resource
                 EditAction::make(),
 
                 // Prebuilt DeleteAction (Filament\Actions\DeleteAction)
-                DeleteAction::make(),
+                
                 
             ])
             ->bulkActions([

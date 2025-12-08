@@ -8,20 +8,18 @@ use App\Models\Kategori;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 
-// Actions dan BulkAction untuk Filament v4 ada di namespace Filament\Actions
+//Actions untuk TABLE (Filament 4)
 use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 
 class KategoriResource extends Resource
 {
     protected static ?string $model = Kategori::class;
 
-    // tipe HARUS BackedEnum|string|null (mengikuti parent Resource)
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-folder';
 
     protected static ?string $navigationLabel  = 'Kategori';
@@ -31,7 +29,6 @@ class KategoriResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        // Delegasi ke KategoriForm
         return KategoriForm::configure($schema);
     }
 
@@ -45,15 +42,14 @@ class KategoriResource extends Resource
                     ->sortable(),
             ])
             ->recordActions([
-                // Akan muncul ikon Edit di tiap baris
+                // ✅ hanya tombol Edit di tiap baris
                 EditAction::make(),
-
-                // Akan muncul ikon Delete di tiap baris
-                DeleteAction::make(),
             ])
-            ->bulkActions([
-                // Bulk delete (centang beberapa baris lalu hapus)
-                DeleteBulkAction::make(),
+            ->toolbarActions([
+                // ✅ bulk delete muncul di toolbar (dropdown Bulk actions)
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
