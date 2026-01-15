@@ -52,4 +52,14 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
         ];
     }
+
+      public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isDosen(): bool
+    {
+        return $this->role === 'dosen';
+    }
 }

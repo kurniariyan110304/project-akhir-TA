@@ -25,6 +25,7 @@ class ProdiResource extends Resource
     protected static ?string $pluralModelLabel  = 'Prodi';
     protected static ?string $recordTitleAttribute = 'nama';
 
+    
     public static function form(Schema $schema): Schema
     {
         return ProdiForm::configure($schema);

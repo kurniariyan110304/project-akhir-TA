@@ -12,6 +12,10 @@ class ListKategoris extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        if (auth()->user()?->role !== 'admin') {
+            return [];
+        }
+
         return [
             CreateAction::make(),
         ];

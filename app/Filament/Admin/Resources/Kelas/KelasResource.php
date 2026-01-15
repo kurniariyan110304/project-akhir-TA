@@ -13,9 +13,8 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 
-// 👇 Actions di Filament 4 ada di namespace ini
+// Actions (Filament 4)
 use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 
@@ -23,18 +22,65 @@ class KelasResource extends Resource
 {
     protected static ?string $model = Kelas::class;
 
-    // icon sidebar
+    // Sidebar icon
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-library';
 
-    // judul record, sesuaikan dengan kolom yang ada di tabel `kelas`
+    // Label & title
+    protected static ?string $navigationLabel = 'Kelas';
+    protected static ?string $modelLabel = 'Kelas';
+    protected static ?string $pluralModelLabel = 'Kelas';
     protected static ?string $recordTitleAttribute = 'kode';
 
+    /**
+     * ===============================
+     * SIDEBAR (ADMIN ONLY)
+     * ===============================
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    /**
+     * ===============================
+     * ACCESS CONTROL (ADMIN ONLY)
+     * ===============================
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    /**
+     * ===============================
+     * FORM
+     * ===============================
+     */
     public static function form(Schema $schema): Schema
     {
-        // kalau kamu memang punya App\Filament\Admin\Resources\Kelas\Schemas\KelasForm
         return KelasForm::configure($schema);
     }
 
+    /**
+     * ===============================
+     * TABLE
+     * ===============================
+     */
     public static function table(Table $table): Table
     {
         return $table
@@ -49,36 +95,33 @@ class KelasResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                // relasi ke matakuliah, tampilkan kolom `nama`
                 TextColumn::make('matakuliah.nama')
                     ->label('Mata Kuliah')
                     ->sortable()
                     ->searchable(),
 
-                // relasi ke dosen, tampilkan kolom `nama`
                 TextColumn::make('dosen.nama')
                     ->label('Dosen')
                     ->sortable()
                     ->searchable(),
             ])
             ->recordActions([
-                EditAction::make(),
-                
+                EditAction::make()
+                    ->visible(fn () => auth()->user()?->role === 'admin'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(fn () => auth()->user()?->role === 'admin'),
                 ]),
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
+    /**
+     * ===============================
+     * PAGES
+     * ===============================
+     */
     public static function getPages(): array
     {
         return [
