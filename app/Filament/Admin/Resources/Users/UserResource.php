@@ -22,6 +22,43 @@ class UserResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    /**
+     * ===============================
+     * SIDEBAR (ADMIN ONLY)
+     * ===============================
+     * Users hanya muncul di sidebar untuk admin.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    /**
+     * ===============================
+     * ACCESS CONTROL (ADMIN ONLY)
+     * ===============================
+     * Supaya selain admin tidak bisa akses lewat URL.
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return UserForm::configure($schema);
@@ -42,9 +79,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListUsers::route('/'),
+            'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
-            'edit' => EditUser::route('/{record}/edit'),
+            'edit'   => EditUser::route('/{record}/edit'),
         ];
     }
 }
