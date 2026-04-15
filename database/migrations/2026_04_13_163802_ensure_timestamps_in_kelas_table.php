@@ -1,5 +1,4 @@
 <?php
-// database/migrations/2025_12_01_121100_add_timestamps_to_kelas_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -7,22 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('kelas', function (Blueprint $table) {
-            // Cek apakah kolom sudah ada sebelum menambahkan
-            if (!Schema::hasColumn('kelas', 'created_at')) {
-                $table->timestamps();
-            }
+            //
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('kelas', function (Blueprint $table) {
-            if (Schema::hasColumn('kelas', 'created_at')) {
-                $table->dropTimestamps();
-            }
+            //
         });
     }
 };

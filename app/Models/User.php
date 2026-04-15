@@ -8,13 +8,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
 class User extends Authenticatable implements FilamentUser
 {
-    public function canAccessPanel(\Filament\Panel $panel): bool
-    {
-        return true; // Kita akan ubah ini nanti
-    }
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
@@ -27,7 +24,10 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
-        'role'
+        'role',
+        'nidn',
+        'nim',
+        'dosen_id',
     ];
 
     /**
@@ -53,7 +53,25 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-      public function isAdmin(): bool
+    /**
+     * Check if user can access a specific Filament panel
+     * HANYA SATU deklarasi method ini
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        $panelId = $panel->getId();
+        
+        return match($panelId) {
+            'admin' => $this->role === 'admin',
+            'dosen' => $this->role === 'dosen',
+            'mahasiswa' => $this->role === 'mahasiswa',
+            'asdos' => $this->role === 'asdos',
+            default => false,
+        };
+    }
+
+    // Helper methods
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
@@ -61,5 +79,26 @@ class User extends Authenticatable implements FilamentUser
     public function isDosen(): bool
     {
         return $this->role === 'dosen';
+    }
+
+    public function isMahasiswa(): bool
+    {
+        return $this->role === 'mahasiswa';
+    }
+
+    public function isAsdos(): bool
+    {
+        return $this->role === 'asdos';
+    }
+
+    // Relasi
+    public function dosen()
+    {
+        return $this->belongsTo(Dosen::class, 'dosen_id');
+    }
+
+    public function mahasiswa()
+    {
+        return $this->belongsTo(Mahasiswa::class, 'nim', 'nim');
     }
 }

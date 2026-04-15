@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/AuthController.php
 
 namespace App\Http\Controllers;
 
@@ -14,39 +15,36 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required', 'string'],
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
 
-        $credentials = $request->only('email', 'password');
-
-        if (! Auth::attempt($credentials)) {
-            return back()
-                ->withErrors(['email' => 'Email atau password salah.'])
-                ->onlyInput('email');
+        if (Auth::attempt($credentials, $request->filled('remember'))) {
+            $request->session()->regenerate();
+            $user = Auth::user();
+            
+            // Redirect berdasarkan role
+            return match($user->role) {
+                'admin' => redirect()->intended('/admin'),
+                'dosen' => redirect()->intended('/dosen'),
+                'mahasiswa' => redirect()->intended('/mahasiswa'),
+                'asdos' => redirect()->intended('/asdos'),
+                default => redirect('/'),
+            };
         }
 
-        $request->session()->regenerate();
-
-        $role = Auth::user()->role;
-
-        return redirect()->to(match ($role) {
-            'admin'     => '/admin',
-            'dosen'     => '/dosen',
-            'mahasiswa' => '/mahasiswa',
-            'asdos'     => '/asdos',
-            default     => '/login',
-        });
+        return back()->withErrors([
+            'email' => 'Email atau password salah.',
+        ])->onlyInput('email');
     }
 
     public function logout(Request $request)
     {
         Auth::logout();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect()->route('login');
+        
+        return redirect('/');
     }
 }
