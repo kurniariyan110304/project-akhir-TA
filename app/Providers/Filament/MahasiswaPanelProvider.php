@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Http\Middleware\EnsureRoleMatchesPanel;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -24,19 +23,19 @@ class MahasiswaPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
-            ->id('mahasiswa')
-            ->path('mahasiswa')
-            ->login() // /mahasiswa/login
-            ->colors([
-                'primary' => Color::Amber,
-            ])
-            ->discoverResources(in: app_path('Filament/Mahasiswa/Resources'), for: 'App\\Filament\\Mahasiswa\\Resources')
-            ->discoverPages(in: app_path('Filament/Mahasiswa/Pages'), for: 'App\\Filament\\Mahasiswa\\Pages')
+       return $panel
+    ->id('mahasiswa')
+    ->path('mahasiswa')
+    ->login()
+    ->colors([
+        'primary' => Color::Amber,
+    ])
+            ->discoverResources(in: app_path('Filament/Mahasiswa/Resources'), for: 'App\Filament\Mahasiswa\Resources')
+            ->discoverPages(in: app_path('Filament/Mahasiswa/Pages'), for: 'App\Filament\Mahasiswa\Pages')
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Mahasiswa/Widgets'), for: 'App\\Filament\\Mahasiswa\\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Mahasiswa/Widgets'), for: 'App\Filament\Mahasiswa\Widgets')
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
@@ -54,7 +53,6 @@ class MahasiswaPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                EnsureRoleMatchesPanel::class,
             ]);
     }
 }
