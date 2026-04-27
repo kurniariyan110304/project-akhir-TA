@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Kategori extends Model
 {
-    protected $table = 'kategori_project';
-    public $timestamps = false;
+    protected $table = 'kategori';
+    public $timestamps = true;
 
     protected $fillable = [
+        'kode',
         'nama',
+        'deskripsi',
     ];
 }

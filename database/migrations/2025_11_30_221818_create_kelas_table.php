@@ -9,17 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('kelas', function (Blueprint $table) {
-            $table->id();  // id INT
+            $table->id();
 
-            $table->integer('semester');  // semester INT
+            $table->integer('semester');
+            $table->string('kode', 50)->nullable();
 
-            $table->string('kode', 50);   // kode VARCHAR
+            $table->unsignedBigInteger('matakuliah_id');
+            $table->unsignedBigInteger('dosen_id');
 
-            $table->unsignedBigInteger('matakuliah_id'); // relasi ke tabel matakuliah
-            $table->unsignedBigInteger('dosen_id');      // relasi ke tabel dosen
-
-            $table->string('ruang', 100)->nullable();    // ruang VARCHAR
-            $table->string('jam', 100)->nullable();      // jam VARCHAR
+            $table->string('ruang', 100)->nullable();
+            $table->string('jam', 100)->nullable();
 
             $table->enum('hari', [
                 'Senin',
@@ -28,15 +27,29 @@ return new class extends Migration
                 'Kamis',
                 'Jumat',
                 'Sabtu',
-            ]);
+            ])->nullable();
 
             $table->timestamps();
 
+            $table->foreign('matakuliah_id')
+                ->references('id')
+                ->on('matakuliah')
+                ->cascadeOnDelete();
+
+            $table->foreign('dosen_id')
+                ->references('id')
+                ->on('dosen')
+                ->cascadeOnDelete();
         });
     }
 
     public function down(): void
     {
+        Schema::table('kelas', function (Blueprint $table) {
+            $table->dropForeign(['matakuliah_id']);
+            $table->dropForeign(['dosen_id']);
+        });
+
         Schema::dropIfExists('kelas');
     }
 };

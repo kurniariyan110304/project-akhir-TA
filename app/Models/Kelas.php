@@ -11,9 +11,6 @@ class Kelas extends Model
 
     protected $table = 'kelas';
 
-    public $timestamps = false;
-
-
     protected $fillable = [
         'semester',
         'kode',
@@ -24,14 +21,13 @@ class Kelas extends Model
         'hari',
     ];
 
-    // Relasi opsional (kalau nanti ada model Matakuliah & Dosen)
     public function matakuliah()
     {
-        return $this->belongsTo(Matakuliah::class);
+        return $this->belongsTo(Matakuliah::class, 'matakuliah_id');
     }
 
     public function dosen()
     {
-        return $this->belongsTo(Dosen::class);
+        return $this->belongsTo(Dosen::class, 'dosen_id');
     }
 }

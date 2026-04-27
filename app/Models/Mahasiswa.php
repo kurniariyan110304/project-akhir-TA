@@ -9,21 +9,23 @@ class Mahasiswa extends Model
     protected $table = 'mahasiswa';
 
     protected $primaryKey = 'nim';
-    public $incrementing = false;
     protected $keyType = 'string';
+    public $incrementing = false;
+    public $timestamps = false;
 
-        // Kolom yang bisa diisi
-        protected $fillable = [
-            'nim',
-            'nama',
-            'jk', // kosongkan
-            'tmp_lahir', //kosongkan
-            'tgl_lahir', //kosongkan
-            'email', //kosongkan
-            'tgl_lahir', //kosongkan
-            'thn_masuk',
-            'prodi_id',
-            'user_id', 
-        ];
+    protected $fillable = [
+        'nim',
+        'nama',
+        'jk',
+        'tmp_lahir',
+        'tgl_lahir',
+        'email',
+        'thn_masuk',
+        'prodi_id',
+    ];
 
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'prodi_id');
+    }
 }

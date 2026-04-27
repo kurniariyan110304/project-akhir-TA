@@ -8,7 +8,8 @@ class Dosen extends Model
 {
     protected $table = 'dosen';
 
-    // Kolom yang bisa diisi
+    public $timestamps = false;
+
     protected $fillable = [
         'nidn',
         'nama',
@@ -18,7 +19,10 @@ class Dosen extends Model
         'tmp_lahir',
         'tgl_lahir',
         'prodi_id',
-        'user_id',
     ];
 
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'prodi_id');
+    }
 }
