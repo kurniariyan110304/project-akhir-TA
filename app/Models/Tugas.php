@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Tugas extends Model
 {
     protected $table = 'tugas_project';
-    
-    // Kolom yang bisa diisi
+
+    public $timestamps = false;
+
     protected $fillable = [
         'kategori',
         'semester',
@@ -21,15 +22,11 @@ class Tugas extends Model
 
     public function kelas()
     {
-        // sesuaikan foreign key & model Kelas
         return $this->belongsTo(Kelas::class, 'kelas_id');
     }
 
     public function kategoriProject()
     {
-        // sesuaikan foreign key & model kategori project
-        // return $this->belongsTo(KategoriProject::class, 'kategori_project_id');
-        // kalau nama modelnya Kategori saja:
         return $this->belongsTo(Kategori::class, 'kategori_project_id');
     }
 }

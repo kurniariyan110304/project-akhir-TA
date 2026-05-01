@@ -23,7 +23,6 @@ class TugasTable
                     ->label('Semester')
                     ->sortable(),
 
-                //ambil dari relasi `kelas` → kolom `kode` (atau ganti ke `nama` kalau ada)
                 TextColumn::make('kelas.kode')
                     ->label('Kelas')
                     ->sortable()
@@ -39,14 +38,10 @@ class TugasTable
                     ->date()
                     ->sortable(),
 
-                //ambil dari relasi `kategoriProject` → kolom `nama`
                 TextColumn::make('kategoriProject.nama')
                     ->label('Kategori Project')
                     ->sortable()
                     ->searchable(),
-            ])
-            ->filters([
-                //
             ])
             ->recordActions([
                 EditAction::make(),

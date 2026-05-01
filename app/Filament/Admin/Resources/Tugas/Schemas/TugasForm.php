@@ -15,19 +15,37 @@ class TugasForm
         return $schema
             ->components([
                 Select::make('kategori')
-                    ->options(['INDIVIDU' => 'I n d i v i d u', 'KELOMPOK' => 'K e l o m p o k']),
+                    ->options([
+                        'INDIVIDU' => 'Individu',
+                        'KELOMPOK' => 'Kelompok',
+                    ])
+                    ->required(),
+
                 TextInput::make('semester')
-                    ->numeric(),
+                    ->numeric()
+                    ->required(),
+
                 Textarea::make('deskripsi')
                     ->columnSpanFull(),
-                TextInput::make('kelas_id')
-                    ->required()
-                    ->numeric(),
-                DatePicker::make('mulai'),
-                DatePicker::make('akhir'),
-                TextInput::make('kategori_project_id')
-                    ->required()
-                    ->numeric(),
+
+                Select::make('kelas_id')
+                    ->relationship('kelas', 'kode')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+
+                DatePicker::make('mulai')
+                    ->required(),
+
+                DatePicker::make('akhir')
+                    ->required(),
+
+                Select::make('kategori_project_id')
+                    ->label('Kategori Project')
+                    ->relationship('kategoriProject', 'nama')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
             ]);
     }
 }
