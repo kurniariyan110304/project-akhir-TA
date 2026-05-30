@@ -6,20 +6,23 @@ use App\Filament\Mahasiswa\Resources\Matakuliahs\Pages\ListMatakuliahs;
 use App\Models\Matakuliah;
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class MatakuliahResource extends Resource
 {
     protected static ?string $model = Matakuliah::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
+
     protected static ?string $navigationLabel = 'Mata Kuliah';
+
     protected static ?string $modelLabel = 'Mata Kuliah';
+
     protected static ?string $pluralModelLabel = 'Mata Kuliah';
-    protected static ?string $recordTitleAttribute = 'nama';
+
     protected static ?int $navigationSort = 3;
 
     public static function shouldRegisterNavigation(): bool
@@ -47,9 +50,19 @@ class MatakuliahResource extends Resource
         return false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function getEloquentQuery(): Builder
     {
-        return $schema->components([]);
+        $query = parent::getEloquentQuery();
+
+        $mahasiswa = auth()->user()?->mahasiswa;
+
+        if (! $mahasiswa) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('kelas.mahasiswa', function (Builder $query) use ($mahasiswa) {
+            $query->where('mahasiswa.nim', $mahasiswa->nim);
+        });
     }
 
     public static function table(Table $table): Table
@@ -58,8 +71,7 @@ class MatakuliahResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('kode')
                     ->label('Kode')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('nama')
                     ->label('Nama Mata Kuliah')
@@ -68,14 +80,9 @@ class MatakuliahResource extends Resource
 
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi')
-                    ->limit(60)
-                    ->placeholder('-'),
-            ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
+                    ->limit(60),
+            ])
+            ->defaultSort('nama', 'asc');
     }
 
     public static function getPages(): array

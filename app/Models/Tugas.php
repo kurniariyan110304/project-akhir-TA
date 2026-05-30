@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tugas extends Model
 {
@@ -20,13 +22,18 @@ class Tugas extends Model
         'kategori_project_id',
     ];
 
-    public function kelas()
+    public function kelas(): BelongsTo
     {
         return $this->belongsTo(Kelas::class, 'kelas_id');
     }
 
-    public function kategoriProject()
+    public function kategoriProject(): BelongsTo
     {
         return $this->belongsTo(Kategori::class, 'kategori_project_id');
+    }
+
+    public function projectMahasiswa(): HasMany
+    {
+        return $this->hasMany(ProjectMahasiswa::class, 'tugas_project_id');
     }
 }

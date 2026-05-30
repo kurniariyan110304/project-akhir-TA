@@ -4,8 +4,8 @@ namespace App\Filament\Admin\Resources\Tugas\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 class TugasForm
@@ -15,6 +15,7 @@ class TugasForm
         return $schema
             ->components([
                 Select::make('kategori')
+                    ->label('Kategori')
                     ->options([
                         'INDIVIDU' => 'Individu',
                         'KELOMPOK' => 'Kelompok',
@@ -22,22 +23,23 @@ class TugasForm
                     ->required(),
 
                 TextInput::make('semester')
+                    ->label('Semester')
                     ->numeric()
                     ->required(),
 
-                Textarea::make('deskripsi')
-                    ->columnSpanFull(),
-
                 Select::make('kelas_id')
+                    ->label('Kelas')
                     ->relationship('kelas', 'kode')
                     ->searchable()
                     ->preload()
                     ->required(),
 
                 DatePicker::make('mulai')
+                    ->label('Mulai')
                     ->required(),
 
                 DatePicker::make('akhir')
+                    ->label('Akhir')
                     ->required(),
 
                 Select::make('kategori_project_id')
@@ -45,7 +47,12 @@ class TugasForm
                     ->relationship('kategoriProject', 'nama')
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->nullable(),
+
+                Textarea::make('deskripsi')
+                    ->label('Deskripsi')
+                    ->rows(4)
+                    ->columnSpanFull(),
             ]);
     }
 }

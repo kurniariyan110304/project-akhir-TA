@@ -2,8 +2,8 @@
 
 namespace App\Filament\Admin\Resources\Dosens\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -14,11 +14,6 @@ class DosenForm
     {
         return $schema
             ->components([
-
-                // otomatis simpan user login
-                Hidden::make('user_id')
-                    ->default(auth()->id()),
-
                 TextInput::make('nidn')
                     ->label('NIDN')
                     ->required()
@@ -55,6 +50,24 @@ class DosenForm
                 Select::make('prodi_id')
                     ->label('Program Studi')
                     ->relationship('prodi', 'nama')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+
+                Select::make('user_id')
+                    ->label('Akun Login Dosen')
+                    ->options(function ($record) {
+                        return User::query()
+                            ->where('role', 'dosen')
+                            ->where(function ($query) use ($record) {
+                                $query->whereDoesntHave('dosen');
+
+                                if ($record?->user_id) {
+                                    $query->orWhere('id', $record->user_id);
+                                }
+                            })
+                            ->pluck('name', 'id');
+                    })
                     ->searchable()
                     ->preload()
                     ->required(),

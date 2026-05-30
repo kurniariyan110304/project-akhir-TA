@@ -10,16 +10,22 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class TugasResource extends Resource
 {
     protected static ?string $model = Tugas::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+
     protected static ?string $navigationLabel = 'Tugas';
+
     protected static ?string $modelLabel = 'Tugas';
+
     protected static ?string $pluralModelLabel = 'Tugas';
+
     protected static ?string $recordTitleAttribute = 'deskripsi';
+
     protected static ?int $navigationSort = 6;
 
     public static function shouldRegisterNavigation(): bool
@@ -47,6 +53,21 @@ class TugasResource extends Resource
         return false;
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        $dosen = auth()->user()?->dosen;
+
+        if (! $dosen) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('kelas', function (Builder $query) use ($dosen) {
+            $query->where('dosen_id', $dosen->id);
+        });
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([]);
@@ -71,6 +92,11 @@ class TugasResource extends Resource
 
                 Tables\Columns\TextColumn::make('kelas.kode')
                     ->label('Kelas')
+                    ->placeholder('-')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('kelas.matakuliah.nama')
+                    ->label('Mata Kuliah')
                     ->placeholder('-')
                     ->searchable(),
 

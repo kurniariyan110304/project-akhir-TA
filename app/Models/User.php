@@ -2,24 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -30,21 +24,11 @@ class User extends Authenticatable implements FilamentUser
         'dosen_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -53,15 +37,11 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    /**
-     * Check if user can access a specific Filament panel
-     * HANYA SATU deklarasi method ini
-     */
     public function canAccessPanel(Panel $panel): bool
     {
         $panelId = $panel->getId();
-        
-        return match($panelId) {
+
+        return match ($panelId) {
             'admin' => $this->role === 'admin',
             'dosen' => $this->role === 'dosen',
             'mahasiswa' => $this->role === 'mahasiswa',
@@ -70,7 +50,6 @@ class User extends Authenticatable implements FilamentUser
         };
     }
 
-    // Helper methods
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -91,14 +70,13 @@ class User extends Authenticatable implements FilamentUser
         return $this->role === 'asdos';
     }
 
-    // Relasi
-    public function dosen()
+    public function dosen(): HasOne
     {
-        return $this->belongsTo(Dosen::class, 'dosen_id');
+        return $this->hasOne(Dosen::class, 'user_id');
     }
 
-    public function mahasiswa()
+    public function mahasiswa(): HasOne
     {
-        return $this->belongsTo(Mahasiswa::class, 'nim', 'nim');
+        return $this->hasOne(Mahasiswa::class, 'user_id');
     }
 }

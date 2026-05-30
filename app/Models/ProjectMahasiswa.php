@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProjectMahasiswa extends Model
 {
@@ -21,17 +23,27 @@ class ProjectMahasiswa extends Model
         'nama_kelompok',
     ];
 
-    public function mahasiswa()
+    public function mahasiswa(): BelongsTo
     {
         return $this->belongsTo(Mahasiswa::class, 'mahasiswa_nim', 'nim');
     }
 
-    public function tugas()
+    public function tugasProject(): BelongsTo
     {
         return $this->belongsTo(Tugas::class, 'tugas_project_id');
     }
 
-    public function anggotaKelompok()
+    public function tugas(): BelongsTo
+    {
+        return $this->belongsTo(Tugas::class, 'tugas_project_id');
+    }
+
+    public function kelompokProject(): HasMany
+    {
+        return $this->hasMany(KelompokProject::class, 'project_mahasiswa_id');
+    }
+
+    public function anggotaKelompok(): HasMany
     {
         return $this->hasMany(KelompokProject::class, 'project_mahasiswa_id');
     }

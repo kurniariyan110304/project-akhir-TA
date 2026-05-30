@@ -7,7 +7,6 @@ use App\Filament\Admin\Resources\Tugas\Pages\EditTugas;
 use App\Filament\Admin\Resources\Tugas\Pages\ListTugas;
 use App\Models\Tugas;
 use BackedEnum;
-use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
@@ -25,10 +24,15 @@ class TugasResource extends Resource
     protected static ?string $model = Tugas::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+
     protected static ?string $navigationLabel = 'Tugas';
+
     protected static ?string $modelLabel = 'Tugas';
+
     protected static ?string $pluralModelLabel = 'Tugas';
+
     protected static ?string $recordTitleAttribute = 'deskripsi';
+
     protected static ?int $navigationSort = 7;
 
     public static function shouldRegisterNavigation(): bool
@@ -42,6 +46,16 @@ class TugasResource extends Resource
     }
 
     public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->role === 'admin';
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->check() && auth()->user()->role === 'admin';
+    }
+
+    public static function canDelete($record): bool
     {
         return auth()->check() && auth()->user()->role === 'admin';
     }
@@ -62,9 +76,11 @@ class TugasResource extends Resource
                 ->numeric()
                 ->required(),
 
-            TextInput::make('kelas_id')
-                ->label('Kelas ID')
-                ->numeric()
+            Select::make('kelas_id')
+                ->label('Kelas')
+                ->relationship('kelas', 'kode')
+                ->searchable()
+                ->preload()
                 ->required(),
 
             DatePicker::make('mulai')
@@ -75,9 +91,11 @@ class TugasResource extends Resource
                 ->label('Akhir')
                 ->required(),
 
-            TextInput::make('kategori_project_id')
-                ->label('Kategori Project ID')
-                ->numeric()
+            Select::make('kategori_project_id')
+                ->label('Kategori Project')
+                ->relationship('kategoriProject', 'nama')
+                ->searchable()
+                ->preload()
                 ->nullable(),
 
             Textarea::make('deskripsi')
@@ -105,8 +123,9 @@ class TugasResource extends Resource
                     ->label('Semester')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('kelas_id')
-                    ->label('Kelas ID')
+                Tables\Columns\TextColumn::make('kelas.kode')
+                    ->label('Kelas')
+                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('mulai')
@@ -119,14 +138,15 @@ class TugasResource extends Resource
                     ->date()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('kategoriProject.nama')
+                    ->label('Kategori Project')
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi')
                     ->limit(50)
                     ->searchable(),
-            ])
-            ->headerActions([
-                CreateAction::make()
-                    ->label('New Tugas'),
             ])
             ->recordActions([
                 EditAction::make(),

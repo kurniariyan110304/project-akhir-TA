@@ -4,7 +4,6 @@ namespace App\Filament\Mahasiswa\Resources\KelompokProjects\Pages;
 
 use App\Filament\Mahasiswa\Resources\KelompokProjects\KelompokProjectResource;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditKelompokProject extends EditRecord
@@ -14,7 +13,6 @@ class EditKelompokProject extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            ViewAction::make(),
             DeleteAction::make(),
         ];
     }

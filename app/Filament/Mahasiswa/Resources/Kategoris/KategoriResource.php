@@ -16,10 +16,15 @@ class KategoriResource extends Resource
     protected static ?string $model = Kategori::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolder;
+
     protected static ?string $navigationLabel = 'Kategori Project';
+
     protected static ?string $modelLabel = 'Kategori Project';
+
     protected static ?string $pluralModelLabel = 'Kategori Project';
+
     protected static ?string $recordTitleAttribute = 'nama';
+
     protected static ?int $navigationSort = 5;
 
     public static function shouldRegisterNavigation(): bool
@@ -56,15 +61,12 @@ class KategoriResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('nama')
                     ->label('Nama Kategori Project')
                     ->searchable()
                     ->sortable(),
-            ]);
+            ])
+            ->defaultSort('nama', 'asc');
     }
 
     public static function getRelations(): array

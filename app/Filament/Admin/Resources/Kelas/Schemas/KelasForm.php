@@ -13,11 +13,9 @@ class KelasForm
     {
         return $schema
             ->components([
-                TextInput::make('semester')
-                    ->numeric(),
-
-                    TextInput::make('kode')
+                TextInput::make('kode')
                     ->label('Kode Kelas')
+                    ->placeholder('Contoh: BD-01')
                     ->required()
                     ->maxLength(20),
 
@@ -29,20 +27,20 @@ class KelasForm
                     ->required(),
 
                 Select::make('dosen_id')
-                    ->label('Dosen')
+                    ->label('Dosen Pengampu')
                     ->relationship('dosen', 'nama')
                     ->searchable()
                     ->preload()
                     ->required(),
 
-                TextInput::make('ruang'),
-
-                TimePicker::make('jam')
-                    ->label('Jam Kuliah')
-                    ->seconds(false)
+                TextInput::make('semester')
+                    ->label('Semester')
+                    ->numeric()
+                    ->placeholder('Contoh: 20251')
                     ->required(),
 
                 Select::make('hari')
+                    ->label('Hari')
                     ->options([
                         'Senin' => 'Senin',
                         'Selasa' => 'Selasa',
@@ -50,7 +48,19 @@ class KelasForm
                         'Kamis' => 'Kamis',
                         'Jumat' => 'Jumat',
                         'Sabtu' => 'Sabtu',
-                    ]),
+                    ])
+                    ->required(),
+
+                TimePicker::make('jam')
+                    ->label('Jam Kuliah')
+                    ->seconds(false)
+                    ->required(),
+
+                TextInput::make('ruang')
+                    ->label('Ruang')
+                    ->placeholder('Contoh: R201')
+                    ->maxLength(10)
+                    ->required(),
             ]);
     }
 }

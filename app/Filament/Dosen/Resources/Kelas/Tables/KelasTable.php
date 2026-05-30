@@ -2,12 +2,11 @@
 
 namespace App\Filament\Dosen\Resources\Kelas\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Tables\Columns\TextColumn;
+use App\Models\Kelas;
+use Filament\Actions\Action;
+use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 
 class KelasTable
 {
@@ -15,36 +14,69 @@ class KelasTable
     {
         return $table
             ->columns([
-                TextColumn::make('semester')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('kode')
+                    ->label('Kode Kelas')
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('kode')
-                    ->searchable(),
-                TextColumn::make('matakuliah.nama')
+
+                Tables\Columns\TextColumn::make('matakuliah.nama')
                     ->label('Mata Kuliah')
-                    ->numeric()
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('dosen.nama')
-                    ->label('Dosen')
-                    ->numeric()
+
+                Tables\Columns\TextColumn::make('semester')
+                    ->label('Semester')
                     ->sortable(),
-                TextColumn::make('ruang')
-                    ->searchable(),
-                TextColumn::make('jam')
-                    ->searchable(),
-                TextColumn::make('hari'),
-            ])
-            ->filters([
-                //
+
+                Tables\Columns\TextColumn::make('hari')
+                    ->label('Hari'),
+
+                Tables\Columns\TextColumn::make('jam')
+                    ->label('Jam'),
+
+                Tables\Columns\TextColumn::make('ruang')
+                    ->label('Ruang'),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                Action::make('lihatMahasiswa')
+                    ->label('Lihat Mahasiswa')
+                    ->icon('heroicon-o-users')
+                    ->modalWidth('7xl')
+                    ->modalHeading(fn (Kelas $record): string => 'Mahasiswa Kelas ' . $record->kode)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(function (Kelas $record) {
+                        $dosen = auth()->user()?->dosen;
+
+                        if (! $dosen || $record->dosen_id !== $dosen->id) {
+                            $mahasiswas = collect();
+                        } else {
+                            $mahasiswas = DB::table('kelas_mahasiswa')
+                                ->join('mahasiswa', 'mahasiswa.nim', '=', 'kelas_mahasiswa.mahasiswa_nim')
+                                ->join('kelas', 'kelas.id', '=', 'kelas_mahasiswa.kelas_id')
+                                ->where('kelas_mahasiswa.kelas_id', $record->id)
+                                ->where('kelas.dosen_id', $dosen->id)
+                                ->select(
+                                    'mahasiswa.nim',
+                                    'mahasiswa.nama',
+                                    'mahasiswa.email',
+                                    'mahasiswa.thn_masuk',
+                                    'kelas.kode as kode_kelas',
+                                    'kelas.semester',
+                                    'kelas.hari',
+                                    'kelas.jam',
+                                    'kelas.ruang',
+                                    'kelas_mahasiswa.nilai_akhir'
+                                )
+                                ->orderBy('mahasiswa.nama')
+                                ->get();
+                        }
+
+                        return view('filament.dosen.pages.list-mahasiswa-mata-kuliah', [
+                            'mahasiswas' => $mahasiswas,
+                        ]);
+                    }),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->defaultSort('kode', 'asc');
     }
 }

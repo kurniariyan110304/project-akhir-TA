@@ -6,20 +6,23 @@ use App\Filament\Mahasiswa\Resources\Tugas\Pages\ListTugas;
 use App\Models\Tugas;
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class TugasResource extends Resource
 {
     protected static ?string $model = Tugas::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+
     protected static ?string $navigationLabel = 'Tugas Project';
+
     protected static ?string $modelLabel = 'Tugas Project';
+
     protected static ?string $pluralModelLabel = 'Tugas Project';
-    protected static ?string $recordTitleAttribute = 'deskripsi';
+
     protected static ?int $navigationSort = 4;
 
     public static function shouldRegisterNavigation(): bool
@@ -47,9 +50,19 @@ class TugasResource extends Resource
         return false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function getEloquentQuery(): Builder
     {
-        return $schema->components([]);
+        $query = parent::getEloquentQuery();
+
+        $mahasiswa = auth()->user()?->mahasiswa;
+
+        if (! $mahasiswa) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('kelas.mahasiswa', function (Builder $query) use ($mahasiswa) {
+            $query->where('mahasiswa.nim', $mahasiswa->nim);
+        });
     }
 
     public static function table(Table $table): Table
@@ -59,21 +72,18 @@ class TugasResource extends Resource
                 Tables\Columns\TextColumn::make('kategori')
                     ->label('Kategori')
                     ->badge()
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('semester')
-                    ->label('Semester')
-                    ->sortable(),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('kelas.kode')
                     ->label('Kelas')
-                    ->searchable()
-                    ->placeholder('-'),
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('kelas.matakuliah.nama')
+                    ->label('Mata Kuliah')
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('kategoriProject.nama')
                     ->label('Kategori Project')
-                    ->searchable()
                     ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('mulai')
@@ -90,12 +100,8 @@ class TugasResource extends Resource
                     ->label('Deskripsi')
                     ->limit(60)
                     ->searchable(),
-            ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
+            ])
+            ->defaultSort('akhir', 'asc');
     }
 
     public static function getPages(): array

@@ -6,20 +6,23 @@ use App\Filament\Mahasiswa\Resources\Kelas\Pages\ListKelas;
 use App\Models\Kelas;
 use BackedEnum;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class KelasResource extends Resource
 {
     protected static ?string $model = Kelas::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
     protected static ?string $navigationLabel = 'Kelas';
+
     protected static ?string $modelLabel = 'Kelas';
+
     protected static ?string $pluralModelLabel = 'Kelas';
-    protected static ?string $recordTitleAttribute = 'kode';
+
     protected static ?int $navigationSort = 2;
 
     public static function shouldRegisterNavigation(): bool
@@ -47,9 +50,19 @@ class KelasResource extends Resource
         return false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function getEloquentQuery(): Builder
     {
-        return $schema->components([]);
+        $query = parent::getEloquentQuery();
+
+        $mahasiswa = auth()->user()?->mahasiswa;
+
+        if (! $mahasiswa) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('mahasiswa', function (Builder $query) use ($mahasiswa) {
+            $query->where('mahasiswa.nim', $mahasiswa->nim);
+        });
     }
 
     public static function table(Table $table): Table
@@ -61,38 +74,29 @@ class KelasResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('matakuliah.nama')
+                    ->label('Mata Kuliah')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('dosen.nama')
+                    ->label('Dosen')
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('semester')
                     ->label('Semester')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('matakuliah.nama')
-                    ->label('Mata Kuliah')
-                    ->searchable()
-                    ->placeholder('-'),
-
-                Tables\Columns\TextColumn::make('dosen.nama')
-                    ->label('Dosen')
-                    ->searchable()
-                    ->placeholder('-'),
-
                 Tables\Columns\TextColumn::make('hari')
-                    ->label('Hari')
-                    ->sortable()
-                    ->placeholder('-'),
+                    ->label('Hari'),
 
                 Tables\Columns\TextColumn::make('jam')
-                    ->label('Jam')
-                    ->placeholder('-'),
+                    ->label('Jam'),
 
                 Tables\Columns\TextColumn::make('ruang')
-                    ->label('Ruang')
-                    ->placeholder('-'),
-            ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
+                    ->label('Ruang'),
+            ])
+            ->defaultSort('kode', 'asc');
     }
 
     public static function getPages(): array
