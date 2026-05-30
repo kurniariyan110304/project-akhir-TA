@@ -16,9 +16,11 @@ class KelasForm
                     ->numeric(),
                 TextInput::make('kode'),
                 TextInput::make('matakuliah_id')
+                    ->label('Mata Kuliah')   
                     ->required()
                     ->numeric(),
                 TextInput::make('dosen_id')
+                    ->label('Dosen')
                     ->required()
                     ->numeric(),
                 TextInput::make('ruang'),

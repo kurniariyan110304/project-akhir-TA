@@ -33,8 +33,9 @@ class DosensTable
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('user_id')
-                    ->numeric()
-                    ->sortable(),
+                    ->label('User ID')
+                    ->sortable()
+                    ->searchable(),
             ])
             ->filters([
                 //

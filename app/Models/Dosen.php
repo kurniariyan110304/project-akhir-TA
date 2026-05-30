@@ -19,6 +19,7 @@ class Dosen extends Model
         'tmp_lahir',
         'tgl_lahir',
         'prodi_id',
+        'user_id',
     ];
 
     public function prodi()

@@ -5,10 +5,12 @@ namespace App\Filament\Dosen\Resources\Matakuliahs;
 use App\Filament\Dosen\Resources\Matakuliahs\Pages\ListMatakuliahs;
 use App\Models\Matakuliah;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 
 class MatakuliahResource extends Resource
 {
@@ -61,6 +63,28 @@ class MatakuliahResource extends Resource
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi')
                     ->limit(50),
+            ])
+            ->recordActions([
+                Action::make('lihatMahasiswa')
+                    ->label('Lihat Mahasiswa')
+                    ->icon('heroicon-o-users')
+                    ->modalHeading(fn (Matakuliah $record): string => 'Mahasiswa yang Mengambil ' . $record->nama)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(function (Matakuliah $record) {
+                        $mahasiswas = DB::table('mahasiswa')
+                            ->join('kelas_mahasiswa', 'mahasiswa.id', '=', 'kelas_mahasiswa.mahasiswa_id')
+                            ->join('kelas', 'kelas_mahasiswa.kelas_id', '=', 'kelas.id')
+                            ->where('kelas.matakuliah_id', $record->id)
+                            ->select('mahasiswa.*')
+                            ->distinct()
+                            ->orderBy('mahasiswa.nama')
+                            ->get();
+
+                        return view('filament.dosen.resources.matakuliahs.mahasiswa-list', [
+                            'mahasiswas' => $mahasiswas,
+                        ]);
+                    }),
             ])
             ->defaultSort('nama', 'asc');
     }

@@ -20,10 +20,12 @@ class KelasTable
                     ->sortable(),
                 TextColumn::make('kode')
                     ->searchable(),
-                TextColumn::make('matakuliah_id')
+                TextColumn::make('matakuliah.nama')
+                    ->label('Mata Kuliah')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('dosen_id')
+                TextColumn::make('dosen.nama')
+                    ->label('Dosen')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('ruang')

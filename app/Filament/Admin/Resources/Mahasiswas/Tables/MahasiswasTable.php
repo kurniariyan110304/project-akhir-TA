@@ -58,7 +58,7 @@ class MahasiswasTable
                     ->sortable(),
 
                 TextColumn::make('user.nim')
-                    ->label('User (NIM)')
+                    ->label('User (ID)')
                     ->sortable(),
             ])
 

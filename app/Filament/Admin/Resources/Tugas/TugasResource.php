@@ -41,10 +41,16 @@ class TugasResource extends Resource
         return auth()->check() && auth()->user()->role === 'admin';
     }
 
+    public static function canCreate(): bool
+    {
+        return auth()->check() && auth()->user()->role === 'admin';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             Select::make('kategori')
+                ->label('Kategori')
                 ->options([
                     'INDIVIDU' => 'Individu',
                     'KELOMPOK' => 'Kelompok',
@@ -52,24 +58,30 @@ class TugasResource extends Resource
                 ->required(),
 
             TextInput::make('semester')
+                ->label('Semester')
                 ->numeric()
                 ->required(),
 
             TextInput::make('kelas_id')
+                ->label('Kelas ID')
                 ->numeric()
                 ->required(),
 
             DatePicker::make('mulai')
+                ->label('Mulai')
                 ->required(),
 
             DatePicker::make('akhir')
+                ->label('Akhir')
                 ->required(),
 
             TextInput::make('kategori_project_id')
+                ->label('Kategori Project ID')
                 ->numeric()
                 ->nullable(),
 
             Textarea::make('deskripsi')
+                ->label('Deskripsi')
                 ->rows(4)
                 ->columnSpanFull(),
         ]);
@@ -86,14 +98,16 @@ class TugasResource extends Resource
                 Tables\Columns\TextColumn::make('kategori')
                     ->label('Kategori')
                     ->badge()
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('semester')
                     ->label('Semester')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('kelas_id')
-                    ->label('Kelas ID'),
+                    ->label('Kelas ID')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('mulai')
                     ->label('Mulai')
@@ -109,6 +123,10 @@ class TugasResource extends Resource
                     ->label('Deskripsi')
                     ->limit(50)
                     ->searchable(),
+            ])
+            ->headerActions([
+                CreateAction::make()
+                    ->label('New Tugas'),
             ])
             ->recordActions([
                 EditAction::make(),

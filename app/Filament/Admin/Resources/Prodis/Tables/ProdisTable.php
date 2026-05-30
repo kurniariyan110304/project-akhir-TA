@@ -7,7 +7,6 @@ use Filament\Tables\Columns\TextColumn;
 
 // Actions untuk Filament v4
 use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
 
@@ -32,13 +31,14 @@ class ProdisTable
                     ->searchable()
                     ->sortable(),
             ])
+
             ->recordActions([
-                EditAction::make(),   // ikon edit per baris
-                DeleteAction::make(), // ikon delete per baris
+                EditAction::make(),
             ])
+
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(), // hapus banyak sekaligus
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

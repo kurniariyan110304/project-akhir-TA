@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Tugas\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -42,6 +43,10 @@ class TugasTable
                     ->label('Kategori Project')
                     ->sortable()
                     ->searchable(),
+            ])
+            ->headerActions([
+                CreateAction::make()
+                    ->label('New Tugas'),
             ])
             ->recordActions([
                 EditAction::make(),
