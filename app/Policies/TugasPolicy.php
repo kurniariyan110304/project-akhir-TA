@@ -18,27 +18,59 @@ class TugasPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'dosen', 'mahasiswa']);
     }
 
     public function view(User $user, Tugas $tugas): bool
     {
-        return $user->role === 'admin';
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->role === 'dosen') {
+            return $tugas->kelas?->dosen_id === $user->dosen?->id;
+        }
+
+        if ($user->role === 'mahasiswa') {
+            return $user->mahasiswa
+                && $tugas->kelas
+                && $tugas->kelas->mahasiswa()
+                    ->where('mahasiswa.nim', $user->mahasiswa->nim)
+                    ->exists();
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'dosen']);
     }
 
     public function update(User $user, Tugas $tugas): bool
     {
-        return $user->role === 'admin';
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->role === 'dosen') {
+            return $tugas->kelas?->dosen_id === $user->dosen?->id;
+        }
+
+        return false;
     }
 
     public function delete(User $user, Tugas $tugas): bool
     {
-        return $user->role === 'admin';
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->role === 'dosen') {
+            return $tugas->kelas?->dosen_id === $user->dosen?->id;
+        }
+
+        return false;
     }
 
     public function restore(User $user, Tugas $tugas): bool

@@ -60,8 +60,11 @@ class MatakuliahResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('kelas.mahasiswa', function (Builder $query) use ($mahasiswa) {
-            $query->where('mahasiswa.nim', $mahasiswa->nim);
+        return $query->whereIn('id', function ($subQuery) use ($mahasiswa) {
+            $subQuery->select('kelas.matakuliah_id')
+                ->from('kelas')
+                ->join('kelas_mahasiswa', 'kelas_mahasiswa.kelas_id', '=', 'kelas.id')
+                ->where('kelas_mahasiswa.mahasiswa_nim', $mahasiswa->nim);
         });
     }
 

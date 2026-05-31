@@ -60,8 +60,10 @@ class TugasResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('kelas.mahasiswa', function (Builder $query) use ($mahasiswa) {
-            $query->where('mahasiswa.nim', $mahasiswa->nim);
+        return $query->whereIn('kelas_id', function ($subQuery) use ($mahasiswa) {
+            $subQuery->select('kelas_id')
+                ->from('kelas_mahasiswa')
+                ->where('mahasiswa_nim', $mahasiswa->nim);
         });
     }
 
@@ -70,20 +72,35 @@ class TugasResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('kategori')
-                    ->label('Kategori')
+                    ->label('Tipe Tugas')
                     ->badge()
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('semester')
+                    ->label('Semester')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('kelas.kode')
                     ->label('Kelas')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('kelas.matakuliah.nama')
                     ->label('Mata Kuliah')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
+
+                Tables\Columns\TextColumn::make('kelas.dosen.nama')
+                    ->label('Dosen')
+                    ->searchable()
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('kategoriProject.nama')
                     ->label('Kategori Project')
+                    ->searchable()
                     ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('mulai')
@@ -98,7 +115,7 @@ class TugasResource extends Resource
 
                 Tables\Columns\TextColumn::make('deskripsi')
                     ->label('Deskripsi')
-                    ->limit(60)
+                    ->limit(80)
                     ->searchable(),
             ])
             ->defaultSort('akhir', 'asc');

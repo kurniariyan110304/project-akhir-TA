@@ -4,7 +4,6 @@ namespace App\Filament\Dosen\Resources\Tugas\Pages;
 
 use App\Filament\Dosen\Resources\Tugas\TugasResource;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditTugas extends EditRecord
@@ -14,7 +13,6 @@ class EditTugas extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            ViewAction::make(),
             DeleteAction::make(),
         ];
     }

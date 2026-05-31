@@ -60,8 +60,10 @@ class KelasResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('mahasiswa', function (Builder $query) use ($mahasiswa) {
-            $query->where('mahasiswa.nim', $mahasiswa->nim);
+        return $query->whereIn('id', function ($subQuery) use ($mahasiswa) {
+            $subQuery->select('kelas_id')
+                ->from('kelas_mahasiswa')
+                ->where('mahasiswa_nim', $mahasiswa->nim);
         });
     }
 
