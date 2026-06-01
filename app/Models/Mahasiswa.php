@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Mahasiswa extends Model
 {
@@ -50,6 +51,11 @@ class Mahasiswa extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function asdos(): HasOne
+    {
+        return $this->hasOne(Asdos::class, 'mahasiswa_nim', 'nim');
+    }
+
     public function prodi(): BelongsTo
     {
         return $this->belongsTo(Prodi::class, 'prodi_id');
@@ -76,4 +82,5 @@ class Mahasiswa extends Model
     {
         return $this->hasMany(KelompokProject::class, 'mahasiswa_nim', 'nim');
     }
+
 }

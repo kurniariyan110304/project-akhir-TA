@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Http\Middleware\EnsureRoleMatchesPanel;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -13,6 +12,7 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
+use App\Filament\Asdos\Widgets\AsdosStatsOverview;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -27,20 +27,36 @@ class AsdosPanelProvider extends PanelProvider
         return $panel
             ->id('asdos')
             ->path('asdos')
-            ->login() // /asdos/login
+            ->login()
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->discoverResources(in: app_path('Filament/Asdos/Resources'), for: 'App\\Filament\\Asdos\\Resources')
-            ->discoverPages(in: app_path('Filament/Asdos/Pages'), for: 'App\\Filament\\Asdos\\Pages')
+
+            ->discoverResources(
+                in: app_path('Filament/Asdos/Resources'),
+                for: 'App\\Filament\\Asdos\\Resources'
+            )
+
+            ->discoverPages(
+                in: app_path('Filament/Asdos/Pages'),
+                for: 'App\\Filament\\Asdos\\Pages'
+            )
+
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Asdos/Widgets'), for: 'App\\Filament\\Asdos\\Widgets')
+
+            ->discoverWidgets(
+                in: app_path('Filament/Asdos/Widgets'),
+                for: 'App\\Filament\\Asdos\\Widgets'
+            )
+
             ->widgets([
                 AccountWidget::class,
+                AsdosStatsOverview::class,
                 FilamentInfoWidget::class,
             ])
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -52,9 +68,9 @@ class AsdosPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+
             ->authMiddleware([
                 Authenticate::class,
-                EnsureRoleMatchesPanel::class,
             ]);
     }
-}
+}   

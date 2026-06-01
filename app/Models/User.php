@@ -79,4 +79,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasOne(Mahasiswa::class, 'user_id');
     }
+
+    public function asdos(): HasOne
+    {
+        return $this->hasOne(Asdos::class, 'user_id');
+    }
 }

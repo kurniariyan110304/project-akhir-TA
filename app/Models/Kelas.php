@@ -52,4 +52,14 @@ class Kelas extends Model
     {
         return $this->hasMany(Tugas::class, 'kelas_id');
     }
+
+    public function asdos(): BelongsToMany
+{
+    return $this->belongsToMany(
+        Asdos::class,
+        'asdos_kelas',
+        'kelas_id',
+        'asdos_id'
+    );
+}
 }
