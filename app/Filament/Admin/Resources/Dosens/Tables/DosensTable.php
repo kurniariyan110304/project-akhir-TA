@@ -29,11 +29,12 @@ class DosensTable
                 TextColumn::make('tgl_lahir')
                     ->date()
                     ->sortable(),
-                TextColumn::make('prodi_id')
-                    ->numeric()
+                TextColumn::make('prodi.nama')
+                    ->label('Prodi')
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('user_id')
-                    ->label('User ID')
+                TextColumn::make('user.email')
+                    ->label('User Login')
                     ->sortable()
                     ->searchable(),
             ])

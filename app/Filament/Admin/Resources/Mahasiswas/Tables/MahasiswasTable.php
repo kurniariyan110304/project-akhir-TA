@@ -57,7 +57,7 @@ class MahasiswasTable
                     ->label('Prodi')
                     ->sortable(),
 
-                TextColumn::make('user.nim')
+                TextColumn::make('user_id')
                     ->label('User (ID)')
                     ->sortable(),
             ])

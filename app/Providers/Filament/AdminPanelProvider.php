@@ -20,6 +20,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Filament\Admin\Pages\ProfilAdmin;
+use Filament\Navigation\MenuItem;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -30,7 +32,15 @@ class AdminPanelProvider extends PanelProvider
     ->id('admin')
     ->path('admin')
     ->login()
-
+    ->sidebarCollapsibleOnDesktop()
+    ->brandName('SIP Proyek Akhir MK')
+    ->userMenuItems([
+        MenuItem::make()
+            ->label('Profil Admin')
+            ->icon('heroicon-o-user-circle')
+            ->url(fn () => ProfilAdmin::getUrl()),
+    ])
+    
     ->homeUrl(fn () => match (auth()->user()?->role) {
         'admin' => '/admin',
         'dosen' => '/dosen',

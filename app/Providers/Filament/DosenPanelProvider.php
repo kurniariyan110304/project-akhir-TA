@@ -29,6 +29,8 @@ class DosenPanelProvider extends PanelProvider
             ->id('dosen')
             ->path('dosen')
             ->login() // /dosen/login
+            ->sidebarCollapsibleOnDesktop()
+            ->brandName('SIP Proyek Akhir MK')
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -41,7 +43,7 @@ class DosenPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
-                DosenStatsOverview::class,  
+                DosenStatsOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class,

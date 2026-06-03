@@ -26,6 +26,7 @@ class LoginPanelProvider extends PanelProvider
         return $panel
             ->id('login')
             ->path('login')
+            ->brandName('SIP Proyek Akhir MK')
             ->colors([
                 'primary' => Color::Amber,
             ])

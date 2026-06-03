@@ -24,13 +24,15 @@ class MahasiswaPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-       return $panel
-    ->id('mahasiswa')
-    ->path('mahasiswa')
-    ->login()
-    ->colors([
-        'primary' => Color::Amber,
-    ])
+        return $panel
+            ->id('mahasiswa')
+            ->path('mahasiswa')
+            ->login()
+            ->sidebarCollapsibleOnDesktop()
+            ->brandName('SIP Proyek Akhir MK')
+            ->colors([
+                'primary' => Color::Amber,
+            ])
             ->discoverResources(in: app_path('Filament/Mahasiswa/Resources'), for: 'App\Filament\Mahasiswa\Resources')
             ->discoverPages(in: app_path('Filament/Mahasiswa/Pages'), for: 'App\Filament\Mahasiswa\Pages')
             ->pages([

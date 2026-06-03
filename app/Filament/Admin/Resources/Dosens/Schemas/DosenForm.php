@@ -26,11 +26,11 @@ class DosenForm
 
                 TextInput::make('gelar_depan')
                     ->label('Gelar Depan')
-                    ->maxLength(10),
+                    ->maxLength(50),
 
                 TextInput::make('gelar_belakang')
                     ->label('Gelar Belakang')
-                    ->maxLength(10),
+                    ->maxLength(50),
 
                 Select::make('jk')
                     ->label('Jenis Kelamin')

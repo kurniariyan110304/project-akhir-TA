@@ -5,10 +5,13 @@ namespace App\Filament\Admin\Resources\KelasMahasiswas;
 use App\Filament\Admin\Resources\KelasMahasiswas\Pages\CreateKelasMahasiswa;
 use App\Filament\Admin\Resources\KelasMahasiswas\Pages\EditKelasMahasiswa;
 use App\Filament\Admin\Resources\KelasMahasiswas\Pages\ListKelasMahasiswas;
+use App\Models\Kelas;
 use App\Models\KelasMahasiswa;
+use App\Models\Mahasiswa;
 use BackedEnum;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -16,6 +19,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+
 
 class KelasMahasiswaResource extends Resource
 {
@@ -36,21 +40,68 @@ class KelasMahasiswaResource extends Resource
         return $schema->components([
             Select::make('kelas_id')
                 ->label('Kelas')
-                ->relationship('kelas', 'kode')
+                ->options(function () {
+                    return Kelas::query()
+                        ->with(['matakuliah', 'dosen'])
+                        ->orderBy('kode')
+                        ->get()
+                        ->mapWithKeys(function ($kelas) {
+                            $kode = $kelas->kode ?? '-';
+                            $matkul = $kelas->matakuliah?->nama ?? '-';
+                            $dosen = $kelas->dosen?->nama ?? '-';
+
+                            return [
+                                $kelas->id => "{$kode} - {$matkul} - {$dosen}",
+                            ];
+                        });
+                })
                 ->searchable()
                 ->preload()
                 ->required(),
 
-            Select::make('mahasiswa_nim')
+            Select::make('mahasiswa_nims')
                 ->label('Mahasiswa')
-                ->relationship('mahasiswa', 'nama')
+                ->options(function () {
+                    return Mahasiswa::query()
+                        ->orderBy('nama')
+                        ->get()
+                        ->mapWithKeys(function ($mahasiswa) {
+                            return [
+                                $mahasiswa->nim => "{$mahasiswa->nim} - {$mahasiswa->nama}",
+                            ];
+                        });
+                })
+                ->multiple()
                 ->searchable()
                 ->preload()
-                ->required(),
+                ->required()
+                ->helperText('Pilih satu atau banyak mahasiswa yang akan dimasukkan ke kelas.')
+                ->visible(fn(string $operation): bool => $operation === 'create')
+                ->dehydrated(fn(string $operation): bool => $operation === 'create'),
+
+            Select::make('mahasiswa_nim')
+                ->label('Mahasiswa')
+                ->options(function () {
+                    return Mahasiswa::query()
+                        ->orderBy('nama')
+                        ->get()
+                        ->mapWithKeys(function ($mahasiswa) {
+                            return [
+                                $mahasiswa->nim => "{$mahasiswa->nim} - {$mahasiswa->nama}",
+                            ];
+                        });
+                })
+                ->searchable()
+                ->preload()
+                ->required()
+                ->visible(fn(string $operation): bool => $operation === 'edit')
+                ->dehydrated(fn(string $operation): bool => $operation === 'edit'),
 
             TextInput::make('nilai_akhir')
                 ->label('Nilai Akhir')
                 ->numeric()
+                ->minValue(0)
+                ->maxValue(100)
                 ->nullable(),
         ]);
     }
@@ -66,22 +117,22 @@ class KelasMahasiswaResource extends Resource
 
                 Tables\Columns\TextColumn::make('kelas.matakuliah.nama')
                     ->label('Mata Kuliah')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('kelas.dosen.nama')
-                    ->label('Dosen')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('mahasiswa.nim')
                     ->label('NIM')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('mahasiswa.nama')
                     ->label('Mahasiswa')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('nilai_akhir')
                     ->label('Nilai Akhir')
+                    ->placeholder('-')
                     ->sortable(),
             ])
             ->recordActions([
@@ -89,7 +140,8 @@ class KelasMahasiswaResource extends Resource
             ])
             ->toolbarActions([
                 DeleteBulkAction::make(),
-            ]);
+            ])
+            ->defaultSort('kelas_id', 'asc');
     }
 
     public static function getPages(): array

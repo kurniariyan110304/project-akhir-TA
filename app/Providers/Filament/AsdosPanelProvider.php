@@ -28,6 +28,8 @@ class AsdosPanelProvider extends PanelProvider
             ->id('asdos')
             ->path('asdos')
             ->login()
+            ->sidebarCollapsibleOnDesktop()
+            ->brandName('SIP Proyek Akhir MK')
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -73,4 +75,4 @@ class AsdosPanelProvider extends PanelProvider
                 Authenticate::class,
             ]);
     }
-}   
+}

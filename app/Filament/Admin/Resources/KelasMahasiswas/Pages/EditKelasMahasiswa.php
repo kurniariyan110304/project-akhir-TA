@@ -4,7 +4,6 @@ namespace App\Filament\Admin\Resources\KelasMahasiswas\Pages;
 
 use App\Filament\Admin\Resources\KelasMahasiswas\KelasMahasiswaResource;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditKelasMahasiswa extends EditRecord
@@ -14,7 +13,6 @@ class EditKelasMahasiswa extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            ViewAction::make(),
             DeleteAction::make(),
         ];
     }
