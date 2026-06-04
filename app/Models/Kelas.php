@@ -36,6 +36,11 @@ class Kelas extends Model
         return $this->belongsTo(Dosen::class, 'dosen_id');
     }
 
+    public function kelasMahasiswa()
+    {
+        return $this->hasMany(KelasMahasiswa::class, 'kelas_id');
+    }
+
     public function mahasiswa(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -54,12 +59,12 @@ class Kelas extends Model
     }
 
     public function asdos(): BelongsToMany
-{
-    return $this->belongsToMany(
-        Asdos::class,
-        'asdos_kelas',
-        'kelas_id',
-        'asdos_id'
-    );
-}
+    {
+        return $this->belongsToMany(
+            Asdos::class,
+            'asdos_kelas',
+            'kelas_id',
+            'asdos_id'
+        );
+    }
 }

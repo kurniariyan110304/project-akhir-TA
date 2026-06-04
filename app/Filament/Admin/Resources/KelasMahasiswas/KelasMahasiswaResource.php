@@ -9,8 +9,7 @@ use App\Models\Kelas;
 use App\Models\KelasMahasiswa;
 use App\Models\Mahasiswa;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -19,10 +18,11 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class KelasMahasiswaResource extends Resource
 {
-    protected static ?string $model = KelasMahasiswa::class;
+    protected static ?string $model = Kelas::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
@@ -86,27 +86,7 @@ class KelasMahasiswaResource extends Resource
                 ->bulkToggleable()
                 ->searchable()
                 ->required()
-                ->helperText('Centang satu atau banyak mahasiswa untuk dimasukkan ke kelas.')
-                ->visible(fn (string $operation): bool => $operation === 'create')
-                ->dehydrated(fn (string $operation): bool => $operation === 'create'),
-
-            Select::make('mahasiswa_nim')
-                ->label('Mahasiswa')
-                ->options(function () {
-                    return Mahasiswa::query()
-                        ->orderBy('nama')
-                        ->get()
-                        ->mapWithKeys(function (Mahasiswa $mahasiswa) {
-                            return [
-                                $mahasiswa->nim => "{$mahasiswa->nim} - {$mahasiswa->nama}",
-                            ];
-                        });
-                })
-                ->searchable()
-                ->preload()
-                ->required()
-                ->visible(fn (string $operation): bool => $operation === 'edit')
-                ->dehydrated(fn (string $operation): bool => $operation === 'edit'),
+                ->helperText('Centang satu atau banyak mahasiswa untuk dimasukkan ke kelas.'),
 
             TextInput::make('nilai_akhir')
                 ->label('Nilai Akhir')
@@ -117,45 +97,70 @@ class KelasMahasiswaResource extends Resource
         ]);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return Kelas::query()
+            ->with([
+                'matakuliah',
+                'dosen',
+            ])
+            ->withCount([
+                'kelasMahasiswa as total_mahasiswa',
+            ])
+            ->withAvg([
+                'kelasMahasiswa as rata_rata_nilai',
+            ], 'nilai_akhir');
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('kelas.kode')
+                Tables\Columns\TextColumn::make('kode')
                     ->label('Kelas')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('kelas.matakuliah.nama')
+                Tables\Columns\TextColumn::make('matakuliah.nama')
                     ->label('Mata Kuliah')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
 
-                Tables\Columns\TextColumn::make('kelas.dosen.nama')
+                Tables\Columns\TextColumn::make('dosen.nama')
                     ->label('Dosen')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
 
-                Tables\Columns\TextColumn::make('mahasiswa.nim')
-                    ->label('NIM')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('mahasiswa.nama')
-                    ->label('Nama Mahasiswa')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('nilai_akhir')
-                    ->label('Nilai Akhir')
-                    ->placeholder('-')
+                Tables\Columns\TextColumn::make('total_mahasiswa')
+                    ->label('Total Mahasiswa')
                     ->sortable(),
             ])
+
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                Action::make('listMahasiswa')
+                    ->label('List Mahasiswa')
+                    ->icon('heroicon-o-users')
+                    ->modalHeading(fn (Kelas $record): string => 'Mahasiswa Kelas ' . ($record->kode ?? '-'))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('4xl')
+                    ->modalContent(function (Kelas $record) {
+                        $mahasiswas = KelasMahasiswa::query()
+                            ->with(['mahasiswa'])
+                            ->where('kelas_id', $record->id)
+                            ->orderBy('mahasiswa_nim')
+                            ->get();
+
+                        return view('filament.admin.pages.list-mahasiswa-kelas', [
+                            'kelas' => $record,
+                            'mahasiswas' => $mahasiswas,
+                        ]);
+                    }),
             ])
-            ->defaultSort('kelas_id', 'asc');
+
+            ->defaultSort('kode', 'asc');
     }
 
     public static function getPages(): array
