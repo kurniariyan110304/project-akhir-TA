@@ -8,4 +8,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateKelas extends CreateRecord
 {
     protected static string $resource = KelasResource::class;
+
+    protected static bool $canCreateAnother = false;
+
 }

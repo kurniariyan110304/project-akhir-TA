@@ -8,4 +8,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateProdi extends CreateRecord
 {
     protected static string $resource = ProdiResource::class;
+
+    protected static bool $canCreateAnother = false;
+
 }

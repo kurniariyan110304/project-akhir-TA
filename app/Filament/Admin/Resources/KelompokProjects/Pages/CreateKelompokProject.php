@@ -8,4 +8,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateKelompokProject extends CreateRecord
 {
     protected static string $resource = KelompokProjectResource::class;
+
+    protected static bool $canCreateAnother = false;
+
 }

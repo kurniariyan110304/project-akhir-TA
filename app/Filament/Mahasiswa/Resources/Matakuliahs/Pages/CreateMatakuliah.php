@@ -8,4 +8,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateMatakuliah extends CreateRecord
 {
     protected static string $resource = MatakuliahResource::class;
+
+    protected static bool $canCreateAnother = false;
+
 }

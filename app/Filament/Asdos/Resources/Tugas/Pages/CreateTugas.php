@@ -8,4 +8,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateTugas extends CreateRecord
 {
     protected static string $resource = TugasResource::class;
+
+    protected static bool $canCreateAnother = false;
+
 }

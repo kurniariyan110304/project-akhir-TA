@@ -44,9 +44,6 @@ class MahasiswaForm
                     ->searchable()
                     ->preload()
                     ->required(),
-
-                    Hidden::make('user_id')
-                    ->default(auth()->id()),
             ]);
     }
 }

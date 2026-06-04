@@ -8,4 +8,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateProjectMahasiswa extends CreateRecord
 {
     protected static string $resource = ProjectMahasiswaResource::class;
+
+    protected static bool $canCreateAnother = false;
+
 }

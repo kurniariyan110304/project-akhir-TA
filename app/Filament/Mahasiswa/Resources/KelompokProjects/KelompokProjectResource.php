@@ -84,16 +84,23 @@ class KelompokProjectResource extends Resource
         }
 
         /*
-         * Supaya tabel utama tidak menampilkan anggota satu-satu.
-         * Kita ambil 1 data saja dari setiap project_mahasiswa_id.
-         */
+     * Menampilkan 1 baris per kelompok.
+     * Bisa dilihat oleh ketua dan semua anggota kelompok.
+     */
         return $query->whereIn('id', function ($subQuery) use ($mahasiswa) {
             $subQuery->selectRaw('MIN(kelompok_project.id)')
                 ->from('kelompok_project')
                 ->join('project_mahasiswa', 'project_mahasiswa.id', '=', 'kelompok_project.project_mahasiswa_id')
                 ->join('tugas_project', 'tugas_project.id', '=', 'project_mahasiswa.tugas_project_id')
-                ->where('project_mahasiswa.mahasiswa_nim', $mahasiswa->nim)
                 ->where('tugas_project.kategori', 'KELOMPOK')
+                ->where(function ($query) use ($mahasiswa) {
+                    $query
+                        // ketua / pembuat project
+                        ->where('project_mahasiswa.mahasiswa_nim', $mahasiswa->nim)
+
+                        // anggota kelompok
+                        ->orWhere('kelompok_project.mahasiswa_nim', $mahasiswa->nim);
+                })
                 ->groupBy('kelompok_project.project_mahasiswa_id');
         });
     }
@@ -178,8 +185,8 @@ class KelompokProjectResource extends Resource
                 ->searchable()
                 ->required()
                 ->helperText('Centang satu atau banyak mahasiswa untuk dimasukkan ke kelompok.')
-                ->visible(fn (string $operation): bool => $operation === 'create')
-                ->dehydrated(fn (string $operation): bool => $operation === 'create'),
+                ->visible(fn(string $operation): bool => $operation === 'create')
+                ->dehydrated(fn(string $operation): bool => $operation === 'create'),
 
             Select::make('mahasiswa_nim')
                 ->label('Anggota Mahasiswa')
@@ -224,8 +231,8 @@ class KelompokProjectResource extends Resource
                 ->searchable()
                 ->preload()
                 ->required()
-                ->visible(fn (string $operation): bool => $operation === 'edit')
-                ->dehydrated(fn (string $operation): bool => $operation === 'edit'),
+                ->visible(fn(string $operation): bool => $operation === 'edit')
+                ->dehydrated(fn(string $operation): bool => $operation === 'edit'),
 
             Select::make('peran')
                 ->label('Peran')
@@ -250,63 +257,72 @@ class KelompokProjectResource extends Resource
     }
 
     public static function table(Table $table): Table
-{
-    return $table
-        ->columns([
-            Tables\Columns\TextColumn::make('project.nama_project')
-                ->label('Nama Project')
-                ->searchable()
-                ->sortable(),
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('project.nama_project')
+                    ->label('Nama Project')
+                    ->searchable()
+                    ->sortable(),
 
-            Tables\Columns\TextColumn::make('project.nama_kelompok')
-                ->label('Nama Kelompok')
-                ->placeholder('-')
-                ->searchable()
-                ->sortable(),
+                Tables\Columns\TextColumn::make('project.nama_kelompok')
+                    ->label('Nama Kelompok')
+                    ->placeholder('-')
+                    ->searchable()
+                    ->sortable(),
 
-            Tables\Columns\TextColumn::make('project.tugas.kategori')
-                ->label('Tipe Tugas')
-                ->badge()
-                ->placeholder('-'),
+                Tables\Columns\TextColumn::make('project.tugas.kategori')
+                    ->label('Tipe Tugas')
+                    ->badge()
+                    ->placeholder('-'),
 
-            Tables\Columns\TextColumn::make('jumlah_anggota')
-                ->label('Jumlah Anggota')
-                ->getStateUsing(function (KelompokProject $record) {
-                    return KelompokProject::query()
-                        ->where('project_mahasiswa_id', $record->project_mahasiswa_id)
-                        ->count();
-                }),
-        ])
-        ->recordActions([
-            Action::make('listAnggota')
-                ->label('List Anggota')
-                ->icon('heroicon-o-users')
-                ->modalHeading(fn (KelompokProject $record): string => 'Anggota Kelompok - ' . ($record->project?->nama_kelompok ?? '-'))
-                ->modalSubmitAction(false)
-                ->modalCancelActionLabel('Tutup')
-                ->modalWidth('5xl')
-                ->modalContent(function (KelompokProject $record) {
-                    $mahasiswa = auth()->user()?->mahasiswa;
-
-                    if (! $mahasiswa || $record->project?->mahasiswa_nim !== $mahasiswa->nim) {
-                        $anggotas = collect();
-                    } else {
-                        $anggotas = KelompokProject::query()
-                            ->with(['mahasiswa', 'project'])
+                Tables\Columns\TextColumn::make('jumlah_anggota')
+                    ->label('Jumlah Anggota')
+                    ->getStateUsing(function (KelompokProject $record) {
+                        return KelompokProject::query()
                             ->where('project_mahasiswa_id', $record->project_mahasiswa_id)
-                            ->orderByRaw("FIELD(peran, 'KETUA', 'ANGGOTA')")
-                            ->orderBy('id')
-                            ->get();
-                    }
+                            ->count();
+                    }),
+            ])
+            ->recordActions([
+                Action::make('listAnggota')
+                    ->label('List Anggota')
+                    ->icon('heroicon-o-users')
+                    ->modalHeading(fn(KelompokProject $record): string => 'Anggota Kelompok - ' . ($record->project?->nama_kelompok ?? '-'))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('5xl')
+                    ->modalContent(function (KelompokProject $record) {
+                        $mahasiswa = auth()->user()?->mahasiswa;
 
-                    return view('filament.mahasiswa.pages.list-anggota-kelompok', [
-                        'project' => $record->project,
-                        'anggotas' => $anggotas,
-                    ]);
-                }),
-        ])
-        ->defaultSort('id', 'desc');
-}
+                        $bolehLihat = $mahasiswa && (
+                            $record->project?->mahasiswa_nim === $mahasiswa->nim ||
+                            KelompokProject::query()
+                                ->where('project_mahasiswa_id', $record->project_mahasiswa_id)
+                                ->where('mahasiswa_nim', $mahasiswa->nim)
+                                ->where('aktif', 1)
+                                ->exists()
+                        );
+                        
+                        if (! $bolehLihat) {
+                            $anggotas = collect();
+                        } else {
+                            $anggotas = KelompokProject::query()
+                                ->with(['mahasiswa', 'project'])
+                                ->where('project_mahasiswa_id', $record->project_mahasiswa_id)
+                                ->orderByRaw("FIELD(peran, 'KETUA', 'ANGGOTA')")
+                                ->orderBy('id')
+                                ->get();
+                        }
+
+                        return view('filament.mahasiswa.pages.list-anggota-kelompok', [
+                            'project' => $record->project,
+                            'anggotas' => $anggotas,
+                        ]);
+                    }),
+            ])
+            ->defaultSort('id', 'desc');
+    }
 
     public static function getPages(): array
     {

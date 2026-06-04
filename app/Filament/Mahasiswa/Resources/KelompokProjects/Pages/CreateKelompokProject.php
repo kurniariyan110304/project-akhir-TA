@@ -13,13 +13,17 @@ class CreateKelompokProject extends CreateRecord
 {
     protected static string $resource = KelompokProjectResource::class;
 
+    protected static bool $canCreateAnother = false;
+
+
     protected function handleRecordCreation(array $data): Model
     {
         $projectId = $data['project_mahasiswa_id'];
         $mahasiswaNims = $data['mahasiswa_nims'] ?? [];
-        $peran = $data['peran'];
         $aktif = $data['aktif'] ?? 1;
         $nilai = $data['nilai'] ?? 0;
+
+        $ketuaNim = auth()->user()?->mahasiswa?->nim;
 
         $firstRecord = null;
         $jumlahBerhasil = 0;
@@ -28,21 +32,47 @@ class CreateKelompokProject extends CreateRecord
         DB::transaction(function () use (
             $projectId,
             $mahasiswaNims,
-            $peran,
+            $ketuaNim,
             $aktif,
             $nilai,
             &$firstRecord,
             &$jumlahBerhasil,
             &$jumlahDuplikat
         ) {
+            if ($ketuaNim) {
+                $ketua = KelompokProject::firstOrCreate(
+                    [
+                        'project_mahasiswa_id' => $projectId,
+                        'mahasiswa_nim' => $ketuaNim,
+                    ],
+                    [
+                        'peran' => 'KETUA',
+                        'aktif' => $aktif,
+                        'nilai' => $nilai,
+                    ]
+                );
+
+                if ($ketua->wasRecentlyCreated) {
+                    $jumlahBerhasil++;
+                } else {
+                    $jumlahDuplikat++;
+                }
+
+                $firstRecord = $ketua;
+            }
+
             foreach ($mahasiswaNims as $nim) {
+                if ($nim === $ketuaNim) {
+                    continue;
+                }
+
                 $record = KelompokProject::firstOrCreate(
                     [
                         'project_mahasiswa_id' => $projectId,
                         'mahasiswa_nim' => $nim,
                     ],
                     [
-                        'peran' => $peran,
+                        'peran' => 'ANGGOTA',
                         'aktif' => $aktif,
                         'nilai' => $nilai,
                     ]

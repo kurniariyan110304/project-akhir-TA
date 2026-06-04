@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\User;
 
 class Mahasiswa extends Model
 {
@@ -36,12 +37,26 @@ class Mahasiswa extends Model
     protected static function booted(): void
     {
         static::saved(function (Mahasiswa $mahasiswa) {
-            if ($mahasiswa->user_id && $mahasiswa->nim) {
-                $mahasiswa->user()->update([
+            if (! $mahasiswa->email || ! $mahasiswa->nim) {
+                return;
+            }
+
+            $user = User::updateOrCreate(
+                ['email' => $mahasiswa->email],
+                [
+                    'name' => $mahasiswa->nama,
                     'password' => Hash::make($mahasiswa->nim),
                     'role' => 'mahasiswa',
                     'nim' => $mahasiswa->nim,
-                ]);
+                ]
+            );
+
+            if ($mahasiswa->user_id !== $user->id) {
+                $mahasiswa->withoutEvents(function () use ($mahasiswa, $user) {
+                    $mahasiswa->update([
+                        'user_id' => $user->id,
+                    ]);
+                });
             }
         });
     }
@@ -82,5 +97,4 @@ class Mahasiswa extends Model
     {
         return $this->hasMany(KelompokProject::class, 'mahasiswa_nim', 'nim');
     }
-
 }

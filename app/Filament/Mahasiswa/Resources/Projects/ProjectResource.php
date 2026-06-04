@@ -76,14 +76,24 @@ class ProjectResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('mahasiswa_nim', $mahasiswa->nim);
+        return $query->where(function (Builder $query) use ($mahasiswa) {
+            $query
+                // project yang dibuat sendiri / ketua
+                ->where('mahasiswa_nim', $mahasiswa->nim)
+
+                // project yang dia menjadi anggota kelompok
+                ->orWhereHas('kelompokProject', function (Builder $query) use ($mahasiswa) {
+                    $query->where('mahasiswa_nim', $mahasiswa->nim)
+                        ->where('aktif', 1);
+                });
+        });
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             Hidden::make('mahasiswa_nim')
-                ->default(fn () => auth()->user()?->mahasiswa?->nim)
+                ->default(fn() => auth()->user()?->mahasiswa?->nim)
                 ->required(),
 
             Select::make('tugas_project_id')
@@ -191,14 +201,14 @@ class ProjectResource extends Resource
                 Tables\Columns\TextColumn::make('link_url')
                     ->label('Link URL')
                     ->limit(25)
-                    ->url(fn ($record) => $record->link_url)
+                    ->url(fn($record) => $record->link_url)
                     ->openUrlInNewTab()
                     ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('link_video')
                     ->label('Link Video')
                     ->limit(25)
-                    ->url(fn ($record) => $record->link_video)
+                    ->url(fn($record) => $record->link_video)
                     ->openUrlInNewTab()
                     ->placeholder('-'),
             ])

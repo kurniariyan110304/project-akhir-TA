@@ -13,6 +13,9 @@ class CreateKelasMahasiswa extends CreateRecord
 {
     protected static string $resource = KelasMahasiswaResource::class;
 
+    protected static bool $canCreateAnother = false;
+
+
     protected function handleRecordCreation(array $data): Model
     {
         $kelasId = $data['kelas_id'];
