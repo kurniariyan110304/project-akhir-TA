@@ -17,11 +17,11 @@ class CreateKelasMahasiswa extends CreateRecord
     {
         $kelasId = $data['kelas_id'];
         $mahasiswaNims = $data['mahasiswa_nims'] ?? [];
-        $nilaiAkhir = $data['nilai_akhir'] ?? null;
+        $nilaiAkhir = $data['nilai_akhir'] ?? 0;
 
         $firstRecord = null;
         $jumlahBerhasil = 0;
-        $jumlahDuplikat = 0;
+        $jumlahSudahAda = 0;
 
         DB::transaction(function () use (
             $kelasId,
@@ -29,7 +29,7 @@ class CreateKelasMahasiswa extends CreateRecord
             $nilaiAkhir,
             &$firstRecord,
             &$jumlahBerhasil,
-            &$jumlahDuplikat
+            &$jumlahSudahAda
         ) {
             foreach ($mahasiswaNims as $nim) {
                 $record = KelasMahasiswa::firstOrCreate(
@@ -45,7 +45,7 @@ class CreateKelasMahasiswa extends CreateRecord
                 if ($record->wasRecentlyCreated) {
                     $jumlahBerhasil++;
                 } else {
-                    $jumlahDuplikat++;
+                    $jumlahSudahAda++;
                 }
 
                 if (! $firstRecord) {
@@ -55,8 +55,8 @@ class CreateKelasMahasiswa extends CreateRecord
         });
 
         Notification::make()
-            ->title('Mahasiswa berhasil diproses')
-            ->body("Data baru: {$jumlahBerhasil}. Data sudah ada: {$jumlahDuplikat}.")
+            ->title('Mahasiswa berhasil dimasukkan ke kelas')
+            ->body("Data baru: {$jumlahBerhasil}. Data sudah ada: {$jumlahSudahAda}.")
             ->success()
             ->send();
 

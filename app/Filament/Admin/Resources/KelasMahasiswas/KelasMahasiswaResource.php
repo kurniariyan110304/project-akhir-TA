@@ -9,7 +9,7 @@ use App\Models\Kelas;
 use App\Models\KelasMahasiswa;
 use App\Models\Mahasiswa;
 use BackedEnum;
-use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
@@ -19,7 +19,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-
 
 class KelasMahasiswaResource extends Resource
 {
@@ -45,7 +44,7 @@ class KelasMahasiswaResource extends Resource
                         ->with(['matakuliah', 'dosen'])
                         ->orderBy('kode')
                         ->get()
-                        ->mapWithKeys(function ($kelas) {
+                        ->mapWithKeys(function (Kelas $kelas) {
                             $kode = $kelas->kode ?? '-';
                             $matkul = $kelas->matakuliah?->nama ?? '-';
                             $dosen = $kelas->dosen?->nama ?? '-';
@@ -57,27 +56,39 @@ class KelasMahasiswaResource extends Resource
                 })
                 ->searchable()
                 ->preload()
+                ->live()
                 ->required(),
 
-            Select::make('mahasiswa_nims')
+            CheckboxList::make('mahasiswa_nims')
                 ->label('Mahasiswa')
-                ->options(function () {
+                ->options(function ($get) {
+                    $kelasId = $get('kelas_id');
+
+                    if (! $kelasId) {
+                        return [];
+                    }
+
                     return Mahasiswa::query()
+                        ->whereNotIn('nim', function ($query) use ($kelasId) {
+                            $query->select('mahasiswa_nim')
+                                ->from('kelas_mahasiswa')
+                                ->where('kelas_id', $kelasId);
+                        })
                         ->orderBy('nama')
                         ->get()
-                        ->mapWithKeys(function ($mahasiswa) {
+                        ->mapWithKeys(function (Mahasiswa $mahasiswa) {
                             return [
                                 $mahasiswa->nim => "{$mahasiswa->nim} - {$mahasiswa->nama}",
                             ];
                         });
                 })
-                ->multiple()
+                ->columns(2)
+                ->bulkToggleable()
                 ->searchable()
-                ->preload()
                 ->required()
-                ->helperText('Pilih satu atau banyak mahasiswa yang akan dimasukkan ke kelas.')
-                ->visible(fn(string $operation): bool => $operation === 'create')
-                ->dehydrated(fn(string $operation): bool => $operation === 'create'),
+                ->helperText('Centang satu atau banyak mahasiswa untuk dimasukkan ke kelas.')
+                ->visible(fn (string $operation): bool => $operation === 'create')
+                ->dehydrated(fn (string $operation): bool => $operation === 'create'),
 
             Select::make('mahasiswa_nim')
                 ->label('Mahasiswa')
@@ -85,7 +96,7 @@ class KelasMahasiswaResource extends Resource
                     return Mahasiswa::query()
                         ->orderBy('nama')
                         ->get()
-                        ->mapWithKeys(function ($mahasiswa) {
+                        ->mapWithKeys(function (Mahasiswa $mahasiswa) {
                             return [
                                 $mahasiswa->nim => "{$mahasiswa->nim} - {$mahasiswa->nama}",
                             ];
@@ -94,15 +105,15 @@ class KelasMahasiswaResource extends Resource
                 ->searchable()
                 ->preload()
                 ->required()
-                ->visible(fn(string $operation): bool => $operation === 'edit')
-                ->dehydrated(fn(string $operation): bool => $operation === 'edit'),
+                ->visible(fn (string $operation): bool => $operation === 'edit')
+                ->dehydrated(fn (string $operation): bool => $operation === 'edit'),
 
             TextInput::make('nilai_akhir')
                 ->label('Nilai Akhir')
                 ->numeric()
                 ->minValue(0)
                 ->maxValue(100)
-                ->nullable(),
+                ->default(0),
         ]);
     }
 
@@ -118,7 +129,12 @@ class KelasMahasiswaResource extends Resource
                 Tables\Columns\TextColumn::make('kelas.matakuliah.nama')
                     ->label('Mata Kuliah')
                     ->searchable()
-                    ->placeholder('-'),
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('kelas.dosen.nama')
+                    ->label('Dosen')
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('mahasiswa.nim')
                     ->label('NIM')
@@ -126,7 +142,7 @@ class KelasMahasiswaResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('mahasiswa.nama')
-                    ->label('Mahasiswa')
+                    ->label('Nama Mahasiswa')
                     ->searchable()
                     ->sortable(),
 
@@ -137,9 +153,7 @@ class KelasMahasiswaResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-            ])
-            ->toolbarActions([
-                DeleteBulkAction::make(),
+                DeleteAction::make(),
             ])
             ->defaultSort('kelas_id', 'asc');
     }
