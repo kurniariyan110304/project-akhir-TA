@@ -8,6 +8,7 @@ use App\Models\KelasMahasiswa;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -80,12 +81,30 @@ class KelasMahasiswaResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('nilai_akhir')
-                ->label('Nilai Akhir')
-                ->numeric()
-                ->minValue(0)
-                ->maxValue(100)
-                ->required(),
+            Section::make('Biodata Mahasiswa')
+                ->schema([
+                    TextInput::make('mahasiswa_nim')
+                        ->label('NIM')
+                        ->disabled()
+                        ->dehydrated(false),
+    
+                    TextInput::make('info_nama')
+                        ->label('Nama Mahasiswa')
+                        ->formatStateUsing(fn (?KelasMahasiswa $record): string => $record?->mahasiswa?->nama ?? '-')
+                        ->disabled()
+                        ->dehydrated(false),
+                ])
+                ->columns(2),
+    
+            Section::make('Input Nilai')
+                ->schema([
+                    TextInput::make('nilai_akhir')
+                        ->label('Nilai Akhir')
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(100)
+                        ->required(),
+                ]),
         ]);
     }
 

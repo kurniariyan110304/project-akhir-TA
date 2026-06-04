@@ -9,6 +9,7 @@ use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -81,20 +82,80 @@ class KelompokProjectResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('nilai')
-                ->label('Nilai Anggota')
-                ->numeric()
-                ->minValue(0)
-                ->maxValue(100)
-                ->required(),
-
-            Select::make('aktif')
-                ->label('Status Anggota')
-                ->options([
-                    1 => 'Aktif',
-                    0 => 'Tidak Aktif',
+            Section::make('Informasi Project')
+                ->schema([
+                    TextInput::make('info_nama_project')
+                        ->label('Nama Project')
+                        ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
+                            $component->state($record?->project?->nama_project ?? '-');
+                        })
+                        ->disabled()
+                        ->dehydrated(false),
+    
+                    TextInput::make('info_tipe_tugas')
+                        ->label('Tipe Tugas')
+                        ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
+                            $component->state($record?->project?->tugas?->kategori ?? '-');
+                        })
+                        ->disabled()
+                        ->dehydrated(false),
+    
+                    TextInput::make('info_nama_kelompok')
+                        ->label('Nama Kelompok')
+                        ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
+                            $component->state($record?->project?->nama_kelompok ?? '-');
+                        })
+                        ->disabled()
+                        ->dehydrated(false),
                 ])
-                ->required(),
+                ->columns(3),
+    
+            Section::make('Informasi Anggota')
+                ->schema([
+                    TextInput::make('info_nim')
+                        ->label('NIM')
+                        ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
+                            $component->state($record?->mahasiswa?->nim ?? '-');
+                        })
+                        ->disabled()
+                        ->dehydrated(false),
+    
+                    TextInput::make('info_nama_anggota')
+                        ->label('Nama Anggota')
+                        ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
+                            $component->state($record?->mahasiswa?->nama ?? '-');
+                        })
+                        ->disabled()
+                        ->dehydrated(false),
+    
+                    TextInput::make('info_peran')
+                        ->label('Peran')
+                        ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
+                            $component->state($record?->peran ?? '-');
+                        })
+                        ->disabled()
+                        ->dehydrated(false),
+                ])
+                ->columns(3),
+    
+            Section::make('Input Nilai')
+                ->schema([
+                    TextInput::make('nilai')
+                        ->label('Nilai Anggota')
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(100)
+                        ->required(),
+    
+                    Select::make('aktif')
+                        ->label('Status Anggota')
+                        ->options([
+                            1 => 'Aktif',
+                            0 => 'Tidak Aktif',
+                        ])
+                        ->required(),
+                ])
+                ->columns(2),
         ]);
     }
 
