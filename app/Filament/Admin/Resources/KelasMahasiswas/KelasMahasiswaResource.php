@@ -19,6 +19,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class KelasMahasiswaResource extends Resource
 {
@@ -142,7 +143,33 @@ class KelasMahasiswaResource extends Resource
                 Action::make('listMahasiswa')
                     ->label('List Mahasiswa')
                     ->icon('heroicon-o-users')
-                    ->modalHeading(fn (Kelas $record): string => 'Mahasiswa Kelas ' . ($record->kode ?? '-'))
+                    ->modalHeading(fn($record) => 'Mahasiswa Kelas ' . ($record->kode ?? '-'))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('5xl')
+                    ->modalContent(function ($record) {
+                        $mahasiswas = DB::table('mahasiswa')
+                            ->join('kelas_mahasiswa', 'mahasiswa.nim', '=', 'kelas_mahasiswa.mahasiswa_nim')
+                            ->where('kelas_mahasiswa.kelas_id', $record->id)
+                            ->select(
+                                'kelas_mahasiswa.id as kelas_mahasiswa_id',
+                                'mahasiswa.nim',
+                                'mahasiswa.nama',
+                                'mahasiswa.email',
+                                'mahasiswa.thn_masuk',
+                                'kelas_mahasiswa.nilai_akhir'
+                            )
+                            ->orderBy('mahasiswa.nama')
+                            ->get();
+
+                        return view('filament.admin.pages.list-mahasiswa-kelas', [
+                            'kelas' => $record,
+                            'mahasiswas' => $mahasiswas,
+                        ]);
+                    })
+                    ->label('List Mahasiswa')
+                    ->icon('heroicon-o-users')
+                    ->modalHeading(fn(Kelas $record): string => 'Mahasiswa Kelas ' . ($record->kode ?? '-'))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalWidth('4xl')

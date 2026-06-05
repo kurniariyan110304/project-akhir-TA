@@ -26,6 +26,7 @@
                     <th style="border: 1px solid #9ca3af; padding: 10px; text-align: left;">NIM</th>
                     <th style="border: 1px solid #9ca3af; padding: 10px; text-align: left;">Nama Mahasiswa</th>
                     <th style="border: 1px solid #9ca3af; padding: 10px; text-align: left;">Nilai Akhir</th>
+                    <th style="border: 1px solid #9ca3af; padding: 10px; text-align: center; width: 120px;">Aksi</th>
                 </tr>
             </thead>
 
@@ -47,10 +48,28 @@
                         <td style="border: 1px solid #9ca3af; padding: 10px;">
                             {{ $item->nilai_akhir ?? '-' }}
                         </td>
+
+                        <td style="border: 1px solid #9ca3af; padding: 10px; text-align: center;">
+                            <form
+                                method="POST"
+                                action="{{ route('admin.kelas-mahasiswa.destroy', $item->id) }}"
+                                onsubmit="return confirm('Yakin ingin menghapus mahasiswa ini dari kelas?')"
+                            >
+                                @csrf
+                                @method('DELETE')
+
+                                <button
+                                    type="submit"
+                                    style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer;"
+                                >
+                                    Hapus
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" style="border: 1px solid #9ca3af; padding: 16px; text-align: center; color: #6b7280;">
+                        <td colspan="5" style="border: 1px solid #9ca3af; padding: 16px; text-align: center; color: #6b7280;">
                             Belum ada mahasiswa di kelas ini.
                         </td>
                     </tr>

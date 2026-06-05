@@ -96,8 +96,8 @@ class KelompokProjectResource extends Resource
                 ->searchable()
                 ->required()
                 ->helperText('Centang satu atau banyak mahasiswa untuk dimasukkan ke kelompok.')
-                ->visible(fn (string $operation): bool => $operation === 'create')
-                ->dehydrated(fn (string $operation): bool => $operation === 'create'),
+                ->visible(fn(string $operation): bool => $operation === 'create')
+                ->dehydrated(fn(string $operation): bool => $operation === 'create'),
 
             Select::make('mahasiswa_nim')
                 ->label('Mahasiswa')
@@ -114,8 +114,8 @@ class KelompokProjectResource extends Resource
                 ->searchable()
                 ->preload()
                 ->required()
-                ->visible(fn (string $operation): bool => $operation === 'edit')
-                ->dehydrated(fn (string $operation): bool => $operation === 'edit'),
+                ->visible(fn(string $operation): bool => $operation === 'edit')
+                ->dehydrated(fn(string $operation): bool => $operation === 'edit'),
 
             Select::make('peran')
                 ->label('Peran')
@@ -187,7 +187,7 @@ class KelompokProjectResource extends Resource
                 Action::make('listAnggota')
                     ->label('List Anggota')
                     ->icon('heroicon-o-users')
-                    ->modalHeading(fn (KelompokProject $record): string => 'Anggota Kelompok - ' . ($record->project?->nama_kelompok ?? '-'))
+                    ->modalHeading(fn(KelompokProject $record): string => 'Anggota Kelompok - ' . ($record->project?->nama_kelompok ?? '-'))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalWidth('5xl')
@@ -207,6 +207,24 @@ class KelompokProjectResource extends Resource
 
                 EditAction::make()
                     ->label('Edit'),
+
+                Action::make('hapusKelompok')
+                    ->label('Hapus')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Hapus Kelompok Project')
+                    ->modalDescription(
+                        fn(KelompokProject $record): string =>
+                        'Apakah kamu yakin ingin menghapus kelompok "' . ($record->project?->nama_kelompok ?? '-') . '" beserta semua anggotanya?'
+                    )
+                    ->modalSubmitActionLabel('Ya, Hapus')
+                    ->action(function (KelompokProject $record): void {
+                        KelompokProject::query()
+                            ->where('project_mahasiswa_id', $record->project_mahasiswa_id)
+                            ->delete();
+                    })
+                    ->successNotificationTitle('Kelompok project berhasil dihapus'),
             ])
             ->defaultSort('id', 'asc');
     }
