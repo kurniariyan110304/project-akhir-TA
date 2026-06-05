@@ -78,18 +78,24 @@ class KelompokProjectResource extends Resource
 
         return $query
             ->with([
-                'mahasiswa',
                 'project',
                 'project.tugas',
                 'project.tugas.kelas',
                 'project.tugas.kelas.matakuliah',
+                'mahasiswa',
             ])
+            ->select('kelompok_project.*')
             ->whereHas('project.tugas.kelas', function (Builder $query) use ($asdos) {
                 $query->whereIn('kelas.id', function ($subQuery) use ($asdos) {
                     $subQuery->select('kelas_id')
                         ->from('asdos_kelas')
                         ->where('asdos_id', $asdos->id);
                 });
+            })
+            ->whereIn('kelompok_project.id', function ($subQuery) {
+                $subQuery->selectRaw('MIN(id)')
+                    ->from('kelompok_project')
+                    ->groupBy('project_mahasiswa_id');
             });
     }
 
@@ -182,93 +188,34 @@ class KelompokProjectResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('project.tugas.kategori')
-                    ->label('Tipe Tugas')
-                    ->badge()
-                    ->searchable()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('project.nama_kelompok')
                     ->label('Nama Kelompok')
-                    ->placeholder('-')
                     ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('mahasiswa.nim')
-                    ->label('NIM')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('mahasiswa.nama')
-                    ->label('Nama Anggota')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('peran')
-                    ->label('Peran')
-                    ->badge()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('aktif')
-                    ->label('Status')
-                    ->formatStateUsing(fn ($state): string => $state ? 'Aktif' : 'Tidak Aktif')
-                    ->badge()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('nilai')
-                    ->label('Nilai')
-                    ->placeholder('-')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
             ])
-
-            ->headerActions([
-                Action::make('exportPdf')
-                    ->label('Export PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->action(function () {
-                        $asdos = auth()->user()?->asdos;
-
-                        if (! $asdos) {
-                            abort(403);
-                        }
-
-                        $data = KelompokProject::query()
-                            ->whereHas('project.tugas.kelas', function (Builder $query) use ($asdos) {
-                                $query->whereIn('kelas.id', function ($subQuery) use ($asdos) {
-                                    $subQuery->select('kelas_id')
-                                        ->from('asdos_kelas')
-                                        ->where('asdos_id', $asdos->id);
-                                });
-                            })
-                            ->with([
-                                'mahasiswa',
-                                'project',
-                                'project.tugas',
-                                'project.tugas.kelas',
-                                'project.tugas.kelas.matakuliah',
-                            ])
-                            ->orderBy('project_mahasiswa_id')
+            ->recordActions([
+                Action::make('listAnggota')
+                    ->label('List Mahasiswa')
+                    ->icon('heroicon-o-users')
+                    ->modalHeading(fn(KelompokProject $record): string => 'Anggota Kelompok - ' . ($record->project?->nama_kelompok ?? '-'))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('5xl')
+                    ->modalContent(function (KelompokProject $record) {
+                        $anggotas = KelompokProject::query()
+                            ->with(['mahasiswa', 'project', 'project.tugas'])
+                            ->where('project_mahasiswa_id', $record->project_mahasiswa_id)
                             ->orderByRaw("FIELD(peran, 'KETUA', 'ANGGOTA')")
                             ->orderBy('id')
                             ->get();
 
-                        $pdf = Pdf::loadView('pdf.kelompok-project-asdos', [
-                            'data' => $data,
-                            'asdos' => $asdos,
-                        ])->setPaper('a4', 'landscape');
-
-                        return response()->streamDownload(function () use ($pdf) {
-                            echo $pdf->output();
-                        }, 'kelompok-project-asdos.pdf');
+                        return view('filament.asdos.pages.list-anggota-kelompok-project', [
+                            'project' => $record->project,
+                            'anggotas' => $anggotas,
+                        ]);
                     }),
             ])
-
-            ->recordActions([
-                EditAction::make()
-                    ->label('Input Nilai')
-                    ->icon('heroicon-o-pencil-square'),
-            ])
-
             ->defaultSort('id', 'desc');
     }
 

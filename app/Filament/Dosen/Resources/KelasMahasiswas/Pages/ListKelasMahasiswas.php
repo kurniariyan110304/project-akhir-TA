@@ -8,4 +8,9 @@ use Filament\Resources\Pages\ListRecords;
 class ListKelasMahasiswas extends ListRecords
 {
     protected static string $resource = KelasMahasiswaResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [];
+    }
 }

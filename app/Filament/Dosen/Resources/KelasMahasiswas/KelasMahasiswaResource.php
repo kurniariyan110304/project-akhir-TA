@@ -2,21 +2,18 @@
 
 namespace App\Filament\Dosen\Resources\KelasMahasiswas;
 
-use App\Filament\Dosen\Resources\KelasMahasiswas\Pages\EditKelasMahasiswa;
 use App\Filament\Dosen\Resources\KelasMahasiswas\Pages\ListKelasMahasiswas;
 use App\Models\KelasMahasiswa;
 use BackedEnum;
-use Filament\Actions\EditAction;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Actions\Action;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class KelasMahasiswaResource extends Resource
 {
@@ -30,7 +27,7 @@ class KelasMahasiswaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Nilai Mahasiswa';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 5;
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -49,13 +46,7 @@ class KelasMahasiswaResource extends Resource
 
     public static function canEdit($record): bool
     {
-        $dosen = auth()->user()?->dosen;
-
-        if (! $dosen) {
-            return false;
-        }
-
-        return $record->kelas?->dosen_id === $dosen->id;
+        return false;
     }
 
     public static function canDelete($record): bool
@@ -73,54 +64,32 @@ class KelasMahasiswaResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('kelas', function (Builder $query) use ($dosen) {
-            $query->where('dosen_id', $dosen->id);
-        });
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return $schema->components([
-            Section::make('Biodata Mahasiswa')
-                ->schema([
-                    TextInput::make('mahasiswa_nim')
-                        ->label('NIM')
-                        ->disabled()
-                        ->dehydrated(false),
-    
-                    TextInput::make('info_nama')
-                        ->label('Nama Mahasiswa')
-                        ->formatStateUsing(fn (?KelasMahasiswa $record): string => $record?->mahasiswa?->nama ?? '-')
-                        ->disabled()
-                        ->dehydrated(false),
-                ])
-                ->columns(2),
-    
-            Section::make('Input Nilai')
-                ->schema([
-                    TextInput::make('nilai_akhir')
-                        ->label('Nilai Akhir')
-                        ->numeric()
-                        ->minValue(0)
-                        ->maxValue(100)
-                        ->required(),
-                ]),
-        ]);
+        return $query
+            ->with([
+                'kelas',
+                'kelas.matakuliah',
+                'kelas.dosen',
+            ])
+            ->select('kelas_mahasiswa.*')
+            ->selectSub(function ($query) {
+                $query->from('kelas_mahasiswa as km2')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('km2.kelas_id', 'kelas_mahasiswa.kelas_id');
+            }, 'total_mahasiswa')
+            ->whereHas('kelas', function (Builder $query) use ($dosen) {
+                $query->where('dosen_id', $dosen->id);
+            })
+            ->whereIn('kelas_mahasiswa.id', function ($subQuery) {
+                $subQuery->selectRaw('MIN(id)')
+                    ->from('kelas_mahasiswa')
+                    ->groupBy('kelas_id');
+            });
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('mahasiswa.nim')
-                    ->label('NIM')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('mahasiswa.nama')
-                    ->label('Nama Mahasiswa')
-                    ->searchable()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('kelas.kode')
                     ->label('Kelas')
                     ->searchable()
@@ -131,70 +100,110 @@ class KelasMahasiswaResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('kelas.semester')
-                    ->label('Semester')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('kelas.hari')
-                    ->label('Hari'),
-
-                Tables\Columns\TextColumn::make('kelas.jam')
-                    ->label('Jam'),
-
-                Tables\Columns\TextColumn::make('kelas.ruang')
-                    ->label('Ruang'),
-
-                Tables\Columns\TextColumn::make('nilai_akhir')
-                    ->label('Nilai Akhir')
-                    ->placeholder('-')
+                Tables\Columns\TextColumn::make('total_mahasiswa')
+                    ->label('Total Mahasiswa')
                     ->sortable(),
             ])
-
-            ->headerActions([
-                Action::make('exportPdf')
-                    ->label('Export PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->action(function () {
-                        $dosen = auth()->user()?->dosen;
-            
-                        if (! $dosen) {
-                            abort(403);
-                        }
-            
-                        $data = KelasMahasiswa::query()
-                            ->whereHas('kelas', function (Builder $query) use ($dosen) {
-                                $query->where('dosen_id', $dosen->id);
-                            })
-                            ->with([
-                                'mahasiswa',
-                                'kelas',
-                                'kelas.matakuliah',
-                            ])
-                            ->get();
-            
-                        $pdf = Pdf::loadView('pdf.nilai-mahasiswa', [
-                            'data' => $data,
-                            'dosen' => $dosen,
-                        ])->setPaper('a4', 'landscape');
-            
-                        return response()->streamDownload(function () use ($pdf) {
-                            echo $pdf->output();
-                        }, 'nilai-mahasiswa.pdf');
-                    }),
-            ])
-            
             ->recordActions([
-                EditAction::make()
-                    ->label('Input Nilai'),
+                Action::make('listMahasiswa')
+                    ->label('List Mahasiswa')
+                    ->icon('heroicon-o-users')
+                    ->modalHeading(fn (KelasMahasiswa $record): string => 'Mahasiswa Kelas ' . ($record->kelas?->kode ?? '-'))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('5xl')
+                    ->modalContent(function (KelasMahasiswa $record) {
+                        $mahasiswas = KelasMahasiswa::query()
+                            ->with(['mahasiswa', 'kelas', 'kelas.matakuliah', 'kelas.dosen'])
+                            ->where('kelas_id', $record->kelas_id)
+                            ->orderBy('mahasiswa_nim')
+                            ->get();
+
+                        return view('filament.dosen.pages.list-mahasiswa-kelas', [
+                            'kelas' => $record->kelas,
+                            'mahasiswas' => $mahasiswas,
+                        ]);
+                    }),
+
+                Action::make('inputNilai')
+                    ->label('Input Nilai')
+                    ->icon('heroicon-o-pencil-square')
+                    ->modalHeading(fn (KelasMahasiswa $record): string => 'Input Nilai Mahasiswa - ' . ($record->kelas?->kode ?? '-'))
+                    ->modalWidth('5xl')
+                    ->form(function (KelasMahasiswa $record): array {
+                        return [
+                            Repeater::make('nilai_mahasiswa')
+                                ->label('Daftar Nilai Mahasiswa')
+                                ->schema([
+                                    Hidden::make('id'),
+
+                                    TextInput::make('mahasiswa')
+                                        ->label('Mahasiswa')
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->columnSpan([
+                                            'default' => 12,
+                                            'md' => 8,
+                                        ]),
+
+                                    TextInput::make('nilai_akhir')
+                                        ->label('Nilai Akhir')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->maxValue(100)
+                                        ->required()
+                                        ->columnSpan([
+                                            'default' => 12,
+                                            'md' => 4,
+                                        ]),
+                                ])
+                                ->columns([
+                                    'default' => 1,
+                                    'md' => 12,
+                                ])
+                                ->addable(false)
+                                ->deletable(false)
+                                ->reorderable(false)
+                                ->default(function () use ($record) {
+                                    return KelasMahasiswa::query()
+                                        ->with('mahasiswa')
+                                        ->where('kelas_id', $record->kelas_id)
+                                        ->orderBy('mahasiswa_nim')
+                                        ->get()
+                                        ->map(function (KelasMahasiswa $item): array {
+                                            return [
+                                                'id' => $item->id,
+                                                'mahasiswa' => $item->mahasiswa_nim . ' - ' . ($item->mahasiswa?->nama ?? '-'),
+                                                'nilai_akhir' => $item->nilai_akhir ?? 0,
+                                            ];
+                                        })
+                                        ->toArray();
+                                })
+                                ->helperText('Input nilai semua mahasiswa yang mengambil kelas ini.'),
+                        ];
+                    })
+                    ->action(function (array $data): void {
+                        foreach ($data['nilai_mahasiswa'] ?? [] as $item) {
+                            if (empty($item['id'])) {
+                                continue;
+                            }
+
+                            KelasMahasiswa::query()
+                                ->where('id', $item['id'])
+                                ->update([
+                                    'nilai_akhir' => $item['nilai_akhir'] ?? 0,
+                                ]);
+                        }
+                    })
+                    ->successNotificationTitle('Nilai mahasiswa berhasil disimpan'),
             ])
-            ->defaultSort('mahasiswa_nim', 'asc');
+            ->defaultSort('kelas_id', 'asc');
     }
 
     public static function getPages(): array
     {
         return [
             'index' => ListKelasMahasiswas::route('/'),
-            'edit' => EditKelasMahasiswa::route('/{record}/edit'),
         ];
     }
 }

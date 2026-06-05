@@ -74,9 +74,23 @@ class KelompokProjectResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('project.tugas.kelas', function (Builder $query) use ($dosen) {
-            $query->where('dosen_id', $dosen->id);
-        });
+        return $query
+            ->with([
+                'project',
+                'project.tugas',
+                'project.tugas.kelas',
+                'project.tugas.kelas.matakuliah',
+                'mahasiswa',
+            ])
+            ->select('kelompok_project.*')
+            ->whereHas('project.tugas.kelas', function (Builder $query) use ($dosen) {
+                $query->where('dosen_id', $dosen->id);
+            })
+            ->whereIn('kelompok_project.id', function ($subQuery) {
+                $subQuery->selectRaw('MIN(id)')
+                    ->from('kelompok_project')
+                    ->groupBy('project_mahasiswa_id');
+            });
     }
 
     public static function form(Schema $schema): Schema
@@ -91,7 +105,7 @@ class KelompokProjectResource extends Resource
                         })
                         ->disabled()
                         ->dehydrated(false),
-    
+
                     TextInput::make('info_tipe_tugas')
                         ->label('Tipe Tugas')
                         ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
@@ -99,7 +113,7 @@ class KelompokProjectResource extends Resource
                         })
                         ->disabled()
                         ->dehydrated(false),
-    
+
                     TextInput::make('info_nama_kelompok')
                         ->label('Nama Kelompok')
                         ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
@@ -109,7 +123,7 @@ class KelompokProjectResource extends Resource
                         ->dehydrated(false),
                 ])
                 ->columns(3),
-    
+
             Section::make('Informasi Anggota')
                 ->schema([
                     TextInput::make('info_nim')
@@ -119,7 +133,7 @@ class KelompokProjectResource extends Resource
                         })
                         ->disabled()
                         ->dehydrated(false),
-    
+
                     TextInput::make('info_nama_anggota')
                         ->label('Nama Anggota')
                         ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
@@ -127,7 +141,7 @@ class KelompokProjectResource extends Resource
                         })
                         ->disabled()
                         ->dehydrated(false),
-    
+
                     TextInput::make('info_peran')
                         ->label('Peran')
                         ->afterStateHydrated(function (TextInput $component, ?KelompokProject $record): void {
@@ -137,7 +151,7 @@ class KelompokProjectResource extends Resource
                         ->dehydrated(false),
                 ])
                 ->columns(3),
-    
+
             Section::make('Input Nilai')
                 ->schema([
                     TextInput::make('nilai')
@@ -146,7 +160,7 @@ class KelompokProjectResource extends Resource
                         ->minValue(0)
                         ->maxValue(100)
                         ->required(),
-    
+
                     Select::make('aktif')
                         ->label('Status Anggota')
                         ->options([
@@ -165,83 +179,36 @@ class KelompokProjectResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('project.nama_project')
                     ->label('Nama Project')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('project.nama_kelompok')
-                    ->label('Nama Kelompok')
-                    ->placeholder('-')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('project.tugas.kelas.kode')
-                    ->label('Kelas')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('project.tugas.kelas.matakuliah.nama')
-                    ->label('Mata Kuliah')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('mahasiswa.nim')
-                    ->label('NIM')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('mahasiswa.nama')
-                    ->label('Nama Mahasiswa')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('peran')
-                    ->label('Peran')
-                    ->badge(),
-
-                Tables\Columns\TextColumn::make('aktif')
-                    ->label('Status')
-                    ->formatStateUsing(fn ($state) => $state ? 'Aktif' : 'Tidak Aktif')
-                    ->badge(),
-
-                Tables\Columns\TextColumn::make('nilai')
-                    ->label('Nilai')
-                    ->placeholder('-')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('project.nama_kelompok')
+                    ->label('Nama Kelompok')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
             ])
-
-            ->headerActions([
-                Action::make('exportPdf')
-                    ->label('Export PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->action(function () {
-                        $dosen = auth()->user()?->dosen;
-            
-                        if (! $dosen) {
-                            abort(403);
-                        }
-            
-                        $data = KelompokProject::query()
-                            ->whereHas('project.tugas.kelas', function (Builder $query) use ($dosen) {
-                                $query->where('dosen_id', $dosen->id);
-                            })
-                            ->with([
-                                'mahasiswa',
-                                'project',
-                                'project.tugas',
-                                'project.tugas.kelas',
-                                'project.tugas.kelas.matakuliah',
-                            ])
-                            ->get();
-            
-                        $pdf = Pdf::loadView('pdf.kelompok-project', [
-                            'data' => $data,
-                            'dosen' => $dosen,
-                        ])->setPaper('a4', 'landscape');
-            
-                        return response()->streamDownload(function () use ($pdf) {
-                            echo $pdf->output();
-                        }, 'kelompok-project.pdf');
-                    }),
-            ])
-            
             ->recordActions([
-                EditAction::make()
-                    ->label('Input Nilai'),
+                Action::make('listAnggota')
+                    ->label('List Mahasiswa')
+                    ->icon('heroicon-o-users')
+                    ->modalHeading(fn(KelompokProject $record): string => 'Anggota Kelompok - ' . ($record->project?->nama_kelompok ?? '-'))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('5xl')
+                    ->modalContent(function (KelompokProject $record) {
+                        $anggotas = KelompokProject::query()
+                            ->with(['mahasiswa', 'project', 'project.tugas'])
+                            ->where('project_mahasiswa_id', $record->project_mahasiswa_id)
+                            ->orderByRaw("FIELD(peran, 'KETUA', 'ANGGOTA')")
+                            ->orderBy('id')
+                            ->get();
+
+                        return view('filament.dosen.pages.list-anggota-kelompok-project', [
+                            'project' => $record->project,
+                            'anggotas' => $anggotas,
+                        ]);
+                    }),
             ])
             ->defaultSort('id', 'desc');
     }

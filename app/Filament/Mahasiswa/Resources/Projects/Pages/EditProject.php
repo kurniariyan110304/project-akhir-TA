@@ -16,4 +16,14 @@ class EditProject extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function getSavedNotificationTitle(): ?string
+    {
+        return 'Project berhasil diperbarui';
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return ProjectResource::getUrl('index');
+    }
 }

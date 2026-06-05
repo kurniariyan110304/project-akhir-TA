@@ -10,7 +10,8 @@ use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -125,7 +126,10 @@ class ProjectMahasiswaResource extends Resource
                         ->numeric()
                         ->minValue(0)
                         ->maxValue(100)
-                        ->required(),
+                        ->required(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori !== 'KELOMPOK')
+                        ->disabled(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'KELOMPOK')
+                        ->dehydrated(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori !== 'KELOMPOK')
+                        ->helperText('Untuk project kelompok, nilai akhir otomatis dihitung dari rata-rata nilai anggota.'),
                 ]),
 
             Section::make('Informasi Mahasiswa')
@@ -157,39 +161,54 @@ class ProjectMahasiswaResource extends Resource
                             $component->state($record?->nama_kelompok ?? '-');
                         })
                         ->disabled()
-                        ->dehydrated(false),
+                        ->dehydrated(false)
+                        ->columnSpanFull(),
 
-                    Textarea::make('info_anggota_kelompok')
-                        ->label('Anggota Kelompok')
-                        ->rows(6)
-                        ->afterStateHydrated(function (Textarea $component, ?ProjectMahasiswa $record): void {
-                            if (! $record) {
-                                $component->state('-');
-                                return;
-                            }
+                    Repeater::make('anggota_kelompok')
+                        ->label('Nilai Per Anggota Kelompok')
+                        ->schema([
+                            Hidden::make('mahasiswa_nim'),
 
-                            $anggotas = KelompokProject::query()
-                                ->with('mahasiswa')
-                                ->where('project_mahasiswa_id', $record->id)
-                                ->orderByRaw("FIELD(peran, 'KETUA', 'ANGGOTA')")
-                                ->orderBy('id')
-                                ->get()
-                                ->map(function (KelompokProject $anggota): string {
-                                    $nim = $anggota->mahasiswa?->nim ?? '-';
-                                    $nama = $anggota->mahasiswa?->nama ?? '-';
-                                    $peran = $anggota->peran ?? '-';
-                                    $nilai = $anggota->nilai ?? 0;
+                            TextInput::make('nama_mahasiswa')
+                                ->label('Mahasiswa')
+                                ->disabled()
+                                ->dehydrated(false)
+                                ->columnSpan([
+                                    'default' => 12,
+                                    'md' => 6,
+                                ]),
 
-                                    return "{$nim} - {$nama} ({$peran}) | Nilai: {$nilai}";
-                                })
-                                ->implode("\n");
+                            TextInput::make('peran')
+                                ->label('Peran')
+                                ->disabled()
+                                ->dehydrated(false)
+                                ->columnSpan([
+                                    'default' => 12,
+                                    'md' => 3,
+                                ]),
 
-                            $component->state($anggotas ?: '-');
-                        })
-                        ->disabled()
-                        ->dehydrated(false),
+                            TextInput::make('nilai')
+                                ->label('Nilai')
+                                ->numeric()
+                                ->minValue(0)
+                                ->maxValue(100)
+                                ->required()
+                                ->columnSpan([
+                                    'default' => 12,
+                                    'md' => 3,
+                                ]),
+                        ])
+                        ->columns([
+                            'default' => 1,
+                            'md' => 12,
+                        ])
+                        ->addable(false)
+                        ->deletable(false)
+                        ->reorderable(false)
+                        ->helperText('Input nilai masing-masing anggota kelompok. Nilai akhir project akan dihitung otomatis.'),
                 ])
-                ->visible(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'KELOMPOK'),
+                ->visible(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'KELOMPOK')
+                ->columnSpanFull(),
         ]);
     }
 
@@ -213,7 +232,6 @@ class ProjectMahasiswaResource extends Resource
                     ->placeholder('-')
                     ->sortable(),
             ])
-
             ->recordActions([
                 Action::make('listMahasiswa')
                     ->label('List Mahasiswa')
@@ -309,7 +327,6 @@ class ProjectMahasiswaResource extends Resource
                     ->label('Input Nilai')
                     ->icon('heroicon-o-pencil-square'),
             ])
-
             ->defaultSort('id', 'desc');
     }
 
