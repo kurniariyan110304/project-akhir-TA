@@ -2,6 +2,7 @@
 
 namespace App\Filament\Asdos\Resources\ProjectMahasiswas;
 
+use App\Exports\ProjectMahasiswaExcelExport;
 use App\Filament\Asdos\Resources\ProjectMahasiswas\Pages\EditProjectMahasiswa;
 use App\Filament\Asdos\Resources\ProjectMahasiswas\Pages\ListProjectMahasiswas;
 use App\Models\KelompokProject;
@@ -20,6 +21,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectMahasiswaResource extends Resource
 {
@@ -232,6 +234,56 @@ class ProjectMahasiswaResource extends Resource
                     ->placeholder('-')
                     ->sortable(),
             ])
+
+            ->headerActions([
+                Action::make('exportExcelSemua')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function () {
+                        $projectIds = static::getEloquentQuery()
+                            ->pluck('id')
+                            ->toArray();
+
+                        return Excel::download(
+                            new ProjectMahasiswaExcelExport($projectIds),
+                            'project-mahasiswa-asdos-semua.xlsx'
+                        );
+                    }),
+
+                Action::make('exportPdfSemua')
+                    ->label('Export PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('warning')
+                    ->action(function () {
+                        $asdos = auth()->user()?->asdos;
+
+                        if (! $asdos) {
+                            abort(403);
+                        }
+
+                        $data = static::getEloquentQuery()
+                            ->with([
+                                'mahasiswa',
+                                'tugas',
+                                'tugas.kelas',
+                                'tugas.kelas.matakuliah',
+                                'anggotaKelompok',
+                                'anggotaKelompok.mahasiswa',
+                            ])
+                            ->get();
+
+                        $pdf = Pdf::loadView('pdf.project-mahasiswa-asdos', [
+                            'data' => $data,
+                            'asdos' => $asdos,
+                        ])->setPaper('a4', 'landscape');
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, 'project-mahasiswa-asdos-semua.pdf');
+                    }),
+            ])
+
             ->recordActions([
                 Action::make('listMahasiswa')
                     ->label('List Mahasiswa')
@@ -274,6 +326,7 @@ class ProjectMahasiswaResource extends Resource
                 Action::make('exportProjectPdf')
                     ->label('Export PDF')
                     ->icon('heroicon-o-document-arrow-down')
+                    ->color('warning')
                     ->action(function (ProjectMahasiswa $record) {
                         $asdos = auth()->user()?->asdos;
 
@@ -315,12 +368,40 @@ class ProjectMahasiswaResource extends Resource
                             'asdos' => $asdos,
                         ])->setPaper('a4', 'landscape');
 
-                        $namaProject = str_replace(' ', '-', strtolower($record->nama_project));
+                        $namaProject = str($record->nama_project)->slug();
                         $namaFile = "project-mahasiswa-{$namaProject}.pdf";
 
                         return response()->streamDownload(function () use ($pdf) {
                             echo $pdf->output();
                         }, $namaFile);
+                    }),
+
+                Action::make('exportProjectExcel')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function (ProjectMahasiswa $record) {
+                        $asdos = auth()->user()?->asdos;
+
+                        if (! $asdos) {
+                            abort(403);
+                        }
+
+                        $bolehAkses = $asdos->kelas()
+                            ->where('kelas.id', $record->tugas?->kelas_id)
+                            ->exists();
+
+                        if (! $bolehAkses) {
+                            abort(403);
+                        }
+
+                        $namaProject = str($record->nama_project)->slug();
+                        $namaFile = "project-mahasiswa-{$namaProject}.xlsx";
+
+                        return Excel::download(
+                            new ProjectMahasiswaExcelExport([$record->id]),
+                            $namaFile
+                        );
                     }),
 
                 EditAction::make()

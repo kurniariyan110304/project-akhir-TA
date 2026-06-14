@@ -2,6 +2,7 @@
 
 namespace App\Filament\Asdos\Resources\KelasMahasiswas;
 
+use App\Exports\NilaiMahasiswaExcelExport;
 use App\Filament\Asdos\Resources\KelasMahasiswas\Pages\EditKelasMahasiswa;
 use App\Filament\Asdos\Resources\KelasMahasiswas\Pages\ListKelasMahasiswas;
 use App\Models\KelasMahasiswa;
@@ -10,7 +11,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -19,6 +19,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KelasMahasiswaResource extends Resource
 {
@@ -113,7 +114,7 @@ class KelasMahasiswaResource extends Resource
 
                     TextInput::make('info_nama')
                         ->label('Nama Mahasiswa')
-                        ->formatStateUsing(fn(?KelasMahasiswa $record): string => $record?->mahasiswa?->nama ?? '-')
+                        ->formatStateUsing(fn (?KelasMahasiswa $record): string => $record?->mahasiswa?->nama ?? '-')
                         ->disabled()
                         ->dehydrated(false),
                 ])
@@ -155,11 +156,69 @@ class KelasMahasiswaResource extends Resource
                     ->sortable(),
             ])
 
+            ->headerActions([
+                Action::make('exportExcelSemua')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function () {
+                        $kelasIds = static::getEloquentQuery()
+                            ->pluck('kelas_id')
+                            ->unique()
+                            ->values()
+                            ->toArray();
+
+                        return Excel::download(
+                            new NilaiMahasiswaExcelExport($kelasIds),
+                            'nilai-mahasiswa-asdos-semua.xlsx'
+                        );
+                    }),
+
+                Action::make('exportPdfSemua')
+                    ->label('Export PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('warning')
+                    ->action(function () {
+                        $asdos = auth()->user()?->asdos;
+
+                        if (! $asdos) {
+                            abort(403);
+                        }
+
+                        $kelasIds = static::getEloquentQuery()
+                            ->pluck('kelas_id')
+                            ->unique()
+                            ->values()
+                            ->toArray();
+
+                        $data = KelasMahasiswa::query()
+                            ->with([
+                                'kelas',
+                                'kelas.matakuliah',
+                                'kelas.dosen',
+                                'mahasiswa',
+                            ])
+                            ->whereIn('kelas_id', $kelasIds)
+                            ->orderBy('kelas_id')
+                            ->orderBy('mahasiswa_nim')
+                            ->get();
+
+                        $pdf = Pdf::loadView('pdf.nilai-mahasiswa-asdos', [
+                            'data' => $data,
+                            'asdos' => $asdos,
+                        ])->setPaper('a4', 'landscape');
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, 'nilai-mahasiswa-asdos-semua.pdf');
+                    }),
+            ])
+
             ->recordActions([
                 Action::make('listMahasiswa')
                     ->label('List Mahasiswa')
                     ->icon('heroicon-o-users')
-                    ->modalHeading(fn(KelasMahasiswa $record): string => 'Mahasiswa Kelas ' . ($record->kelas?->kode ?? '-'))
+                    ->modalHeading(fn (KelasMahasiswa $record): string => 'Mahasiswa Kelas ' . ($record->kelas?->kode ?? '-'))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalWidth('5xl')
@@ -179,7 +238,7 @@ class KelasMahasiswaResource extends Resource
                 Action::make('inputNilai')
                     ->label('Input Nilai')
                     ->icon('heroicon-o-pencil-square')
-                    ->modalHeading(fn(KelasMahasiswa $record): string => 'Input Nilai Mahasiswa - ' . ($record->kelas?->kode ?? '-'))
+                    ->modalHeading(fn (KelasMahasiswa $record): string => 'Input Nilai Mahasiswa - ' . ($record->kelas?->kode ?? '-'))
                     ->modalWidth('5xl')
                     ->form(function (KelasMahasiswa $record): array {
                         return [
@@ -247,6 +306,75 @@ class KelasMahasiswaResource extends Resource
                         }
                     })
                     ->successNotificationTitle('Nilai mahasiswa berhasil disimpan'),
+
+                Action::make('exportExcelKelas')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function (KelasMahasiswa $record) {
+                        $asdos = auth()->user()?->asdos;
+
+                        if (! $asdos) {
+                            abort(403);
+                        }
+
+                        $bolehAkses = $asdos->kelas()
+                            ->where('kelas.id', $record->kelas_id)
+                            ->exists();
+
+                        if (! $bolehAkses) {
+                            abort(403);
+                        }
+
+                        $kodeKelas = str($record->kelas?->kode ?? 'kelas')->slug();
+
+                        return Excel::download(
+                            new NilaiMahasiswaExcelExport([$record->kelas_id]),
+                            "nilai-mahasiswa-{$kodeKelas}.xlsx"
+                        );
+                    }),
+
+                Action::make('exportPdfKelas')
+                    ->label('Export PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('warning')
+                    ->action(function (KelasMahasiswa $record) {
+                        $asdos = auth()->user()?->asdos;
+
+                        if (! $asdos) {
+                            abort(403);
+                        }
+
+                        $bolehAkses = $asdos->kelas()
+                            ->where('kelas.id', $record->kelas_id)
+                            ->exists();
+
+                        if (! $bolehAkses) {
+                            abort(403);
+                        }
+
+                        $data = KelasMahasiswa::query()
+                            ->with([
+                                'kelas',
+                                'kelas.matakuliah',
+                                'kelas.dosen',
+                                'mahasiswa',
+                            ])
+                            ->where('kelas_id', $record->kelas_id)
+                            ->orderBy('mahasiswa_nim')
+                            ->get();
+
+                        $pdf = Pdf::loadView('pdf.nilai-mahasiswa-asdos', [
+                            'data' => $data,
+                            'asdos' => $asdos,
+                        ])->setPaper('a4', 'landscape');
+
+                        $kodeKelas = str($record->kelas?->kode ?? 'kelas')->slug();
+
+                        return response()->streamDownload(function () use ($pdf) {
+                            echo $pdf->output();
+                        }, "nilai-mahasiswa-{$kodeKelas}.pdf");
+                    }),
             ])
 
             ->defaultSort('kelas_id', 'asc');

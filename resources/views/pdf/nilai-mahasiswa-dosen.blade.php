@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Nilai Mahasiswa Asdos</title>
+    <title>Laporan Nilai Mahasiswa Dosen</title>
 
     <style>
         body {
@@ -61,15 +61,15 @@
 
     <div class="header">
         <h2>Laporan Nilai Mahasiswa</h2>
-        <h3>Panel Asisten Dosen</h3>
+        <h3>Panel Dosen</h3>
     </div>
 
     <div class="info">
         <table>
             <tr>
-                <td width="18%"><strong>Nama Asdos</strong></td>
+                <td width="18%"><strong>Nama Dosen</strong></td>
                 <td width="2%">:</td>
-                <td>{{ $asdos->mahasiswa->nama ?? auth()->user()->name ?? '-' }}</td>
+                <td>{{ $dosen->nama ?? auth()->user()->name ?? '-' }}</td>
             </tr>
             <tr>
                 <td><strong>Tanggal Export</strong></td>
@@ -83,13 +83,12 @@
         <thead>
             <tr>
                 <th width="4%">No</th>
-                <th width="12%">Kode Kelas</th>
+                <th width="11%">Kode Kelas</th>
                 <th width="18%">Mata Kuliah</th>
                 <th width="8%">Semester</th>
                 <th width="12%">NIM</th>
-                <th width="25%">Nama Mahasiswa</th>
-                <th width="15%">Email</th>
-                <th width="8%">Nilai Akhir</th>
+                <th width="28%">Nama Mahasiswa</th>
+                <th width="12%">Nilai Akhir</th>
             </tr>
         </thead>
         <tbody>
@@ -101,12 +100,11 @@
                     <td class="text-center">{{ $item->kelas->semester ?? '-' }}</td>
                     <td>{{ $item->mahasiswa_nim ?? '-' }}</td>
                     <td>{{ $item->mahasiswa->nama ?? '-' }}</td>
-                    <td>{{ $item->mahasiswa->email ?? '-' }}</td>
                     <td class="text-center">{{ $item->nilai_akhir ?? 0 }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center">Data nilai mahasiswa tidak tersedia.</td>
+                    <td colspan="7" class="text-center">Data nilai mahasiswa tidak tersedia.</td>
                 </tr>
             @endforelse
         </tbody>

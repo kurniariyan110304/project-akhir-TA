@@ -2,6 +2,7 @@
 
 namespace App\Filament\Dosen\Resources\ProjectMahasiswas;
 
+use App\Exports\ProjectMahasiswaExcelExport;
 use App\Filament\Dosen\Resources\ProjectMahasiswas\Pages\EditProjectMahasiswa;
 use App\Filament\Dosen\Resources\ProjectMahasiswas\Pages\ListProjectMahasiswas;
 use App\Models\KelompokProject;
@@ -10,10 +11,9 @@ use BackedEnum;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -21,7 +21,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectMahasiswaResource extends Resource
 {
@@ -122,9 +122,9 @@ class ProjectMahasiswaResource extends Resource
                         ->numeric()
                         ->minValue(0)
                         ->maxValue(100)
-                        ->required(fn(?ProjectMahasiswa $record): bool => $record?->tugas?->kategori !== 'KELOMPOK')
-                        ->disabled(fn(?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'KELOMPOK')
-                        ->dehydrated(fn(?ProjectMahasiswa $record): bool => $record?->tugas?->kategori !== 'KELOMPOK')
+                        ->required(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori !== 'KELOMPOK')
+                        ->disabled(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'KELOMPOK')
+                        ->dehydrated(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori !== 'KELOMPOK')
                         ->helperText('Untuk project kelompok, nilai akhir otomatis dihitung dari rata-rata nilai anggota.'),
                 ]),
 
@@ -147,7 +147,7 @@ class ProjectMahasiswaResource extends Resource
                         ->dehydrated(false),
                 ])
                 ->columns(2)
-                ->visible(fn(?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'INDIVIDU'),
+                ->visible(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'INDIVIDU'),
 
             Section::make('Informasi Kelompok')
                 ->schema([
@@ -203,7 +203,7 @@ class ProjectMahasiswaResource extends Resource
                         ->reorderable(false)
                         ->helperText('Input nilai masing-masing anggota kelompok. Nilai akhir project akan dihitung otomatis.'),
                 ])
-                ->visible(fn(?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'KELOMPOK')
+                ->visible(fn (?ProjectMahasiswa $record): bool => $record?->tugas?->kategori === 'KELOMPOK')
                 ->columnSpanFull(),
         ]);
     }
@@ -229,9 +229,25 @@ class ProjectMahasiswaResource extends Resource
                     ->sortable(),
             ])
             ->headerActions([
+                Action::make('export_excel_semua')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function () {
+                        $projectIds = static::getEloquentQuery()
+                            ->pluck('id')
+                            ->toArray();
+
+                        return Excel::download(
+                            new ProjectMahasiswaExcelExport($projectIds),
+                            'data-project-mahasiswa-semua.xlsx'
+                        );
+                    }),
+
                 Action::make('exportPdf')
                     ->label('Export PDF')
                     ->icon('heroicon-o-document-arrow-down')
+                    ->color('warning')
                     ->action(function () {
                         $dosen = auth()->user()?->dosen;
 
@@ -305,6 +321,7 @@ class ProjectMahasiswaResource extends Resource
                 Action::make('exportProjectPdf')
                     ->label('Export PDF')
                     ->icon('heroicon-o-document-arrow-down')
+                    ->color('warning')
                     ->action(function (ProjectMahasiswa $record) {
                         $dosen = auth()->user()?->dosen;
 
@@ -338,12 +355,32 @@ class ProjectMahasiswaResource extends Resource
                             'dosen' => $dosen,
                         ])->setPaper('a4', 'landscape');
 
-                        $namaProject = str_replace(' ', '-', strtolower($record->nama_project));
+                        $namaProject = str($record->nama_project)->slug();
                         $namaFile = "project-mahasiswa-{$namaProject}.pdf";
 
                         return response()->streamDownload(function () use ($pdf) {
                             echo $pdf->output();
                         }, $namaFile);
+                    }),
+
+                Action::make('exportProjectExcel')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function (ProjectMahasiswa $record) {
+                        $dosen = auth()->user()?->dosen;
+
+                        if (! $dosen || $record->tugas?->kelas?->dosen_id !== $dosen->id) {
+                            abort(403);
+                        }
+
+                        $namaProject = str($record->nama_project)->slug();
+                        $namaFile = "project-mahasiswa-{$namaProject}.xlsx";
+
+                        return Excel::download(
+                            new ProjectMahasiswaExcelExport([$record->id]),
+                            $namaFile
+                        );
                     }),
 
                 EditAction::make()
